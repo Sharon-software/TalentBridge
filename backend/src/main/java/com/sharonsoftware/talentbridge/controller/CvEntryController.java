@@ -98,7 +98,6 @@ public class CvEntryController {
         entry.setStartDate(request.startDate());
         entry.setEndDate(request.endDate());
         entry.setSkills(normalizeSkills(request.skills()));
-        entry.setSkills(normalizeSkills(request.skills()));
     }
 
     private static LinkedHashSet<String> normalizeSkills(List<String> skills) {
