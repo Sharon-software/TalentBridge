@@ -1,0 +1,3 @@
+ALTER TABLE users
+    ADD CONSTRAINT chk_users_role
+    CHECK (role IN ('STUDENT', 'ADMIN', 'MENTOR', 'EMPLOYER', 'EXTERNAL_MENTOR'));
