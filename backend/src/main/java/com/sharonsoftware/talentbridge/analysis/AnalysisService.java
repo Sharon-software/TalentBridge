@@ -17,6 +17,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class AnalysisService {
@@ -32,6 +34,7 @@ public class AnalysisService {
     private final FileStorage fileStorage;
     private final DocumentTextExtractor textExtractor;
     private final ClaudeApiClient claudeApiClient;
+    private final TransactionTemplate transactionTemplate;
 
     public AnalysisService(
             ScoreCardRepository scoreCardRepository,
@@ -39,20 +42,18 @@ public class AnalysisService {
             StudentProfileRepository studentProfileRepository,
             FileStorage fileStorage,
             DocumentTextExtractor textExtractor,
-            ClaudeApiClient claudeApiClient) {
+            ClaudeApiClient claudeApiClient,
+            PlatformTransactionManager transactionManager) {
         this.scoreCardRepository = scoreCardRepository;
         this.submissionRepository = submissionRepository;
         this.studentProfileRepository = studentProfileRepository;
         this.fileStorage = fileStorage;
         this.textExtractor = textExtractor;
         this.claudeApiClient = claudeApiClient;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     public void analyzeSubmission(UUID submissionId) {
-        ScoreCard scoreCard = scoreCardRepository.findBySubmissionId(submissionId).orElse(null);
-        if (scoreCard == null) {
-            return;
-        }
         try {
             Submission submission = submissionRepository.findById(submissionId).orElseThrow();
             String text;
@@ -60,14 +61,21 @@ public class AnalysisService {
                 text = textExtractor.extract(input, submission.getOriginalFilename());
             }
             AnalysisResult result = analyzeWithRetries(text);
-            saveResult(scoreCard, result);
-            scoreCardRepository.save(scoreCard);
-            recomputeOverallScore(submission.getStudentProfile().getId());
+            UUID studentProfileId = submission.getStudentProfile().getId();
+            transactionTemplate.executeWithoutResult(transactionStatus -> {
+                ScoreCard scoreCard = scoreCardRepository.findBySubmissionId(submissionId).orElseThrow();
+                saveResult(scoreCard, result);
+                scoreCardRepository.save(scoreCard);
+                recomputeOverallScore(studentProfileId);
+            });
         } catch (Exception exception) {
             LOGGER.warn("Analysis failed for submission {} after retries ({})", submissionId, exception.getClass().getSimpleName());
-            scoreCard.setAnalysisStatus(AnalysisStatus.FAILED);
-            scoreCard.setErrorMessage("Analysis failed after retrying the Claude API");
-            scoreCardRepository.save(scoreCard);
+            transactionTemplate.executeWithoutResult(transactionStatus ->
+                    scoreCardRepository.findBySubmissionId(submissionId).ifPresent(scoreCard -> {
+                        scoreCard.setAnalysisStatus(AnalysisStatus.FAILED);
+                        scoreCard.setErrorMessage("Analysis failed after retrying the Claude API");
+                        scoreCardRepository.save(scoreCard);
+                    }));
         }
     }
 

@@ -42,6 +42,8 @@ Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 min
 - `POST /api/submissions?assignmentId={id}` accepts multipart form data with a `file` field and requires the `STUDENT` role. Each student can submit once per assignment; the server records `ON_TIME` or `LATE` against the deadline.
 - `GET /api/submissions/mine` lists the current student's submissions, and `GET /api/submissions/me/punctuality` returns their on-time percentage.
 - `GET /api/submissions/students/punctuality?studentProfileId={id}` returns a student's punctuality summary for coaches and admins.
+- `POST /api/submissions/{submissionId}/external-access-grants` grants an external mentor access; only coaches and mentors can grant, and `expiresAt` is optional.
+- `DELETE /api/submissions/{submissionId}/external-access-grants/{grantId}` revokes a grant. External mentors can download the file or view the analysis only while a matching grant is active and unexpired.
 
 Uploads are stored under `UPLOAD_DIRECTORY` (default `./uploads`) using generated storage keys. The maximum upload size defaults to 10 MB and can be changed with `MAX_UPLOAD_SIZE` and `MAX_UPLOAD_REQUEST_SIZE`.
 

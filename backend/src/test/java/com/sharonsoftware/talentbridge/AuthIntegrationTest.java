@@ -7,6 +7,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
+import com.sharonsoftware.talentbridge.repository.CohortRepository;
+import com.sharonsoftware.talentbridge.repository.ExternalAccessGrantRepository;
+import com.sharonsoftware.talentbridge.repository.ScoreCardRepository;
+import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
+import com.sharonsoftware.talentbridge.repository.SubmissionRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,8 +38,32 @@ class AuthIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+        @Autowired
+        private ExternalAccessGrantRepository externalAccessGrantRepository;
+
+        @Autowired
+        private ScoreCardRepository scoreCardRepository;
+
+        @Autowired
+        private SubmissionRepository submissionRepository;
+
+        @Autowired
+        private AssignmentRepository assignmentRepository;
+
+        @Autowired
+        private StudentProfileRepository studentProfileRepository;
+
+        @Autowired
+        private CohortRepository cohortRepository;
+
     @BeforeEach
     void clearUsers() {
+                externalAccessGrantRepository.deleteAll();
+                scoreCardRepository.deleteAll();
+                submissionRepository.deleteAll();
+                assignmentRepository.deleteAll();
+                studentProfileRepository.deleteAll();
+                cohortRepository.deleteAll();
         userRepository.deleteAll();
     }
 
