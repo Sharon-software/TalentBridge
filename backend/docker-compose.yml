@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: talentbridge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-talentbridge}
+      POSTGRES_USER: ${DB_USERNAME:-talentbridge}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-talentbridge}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - talentbridge-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-talentbridge} -d ${DB_NAME:-talentbridge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  talentbridge-postgres-data:
