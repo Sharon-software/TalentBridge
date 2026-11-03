@@ -13,6 +13,7 @@ import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
 import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
+import com.sharonsoftware.talentbridge.analysis.AnalysisScheduler;
 import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
 import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
@@ -30,6 +31,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -64,6 +66,9 @@ class AssignmentSubmissionIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+        @MockitoBean
+        private AnalysisScheduler analysisScheduler;
 
     @BeforeEach
     void clearData() {

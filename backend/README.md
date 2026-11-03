@@ -45,6 +45,12 @@ Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 min
 
 Uploads are stored under `UPLOAD_DIRECTORY` (default `./uploads`) using generated storage keys. The maximum upload size defaults to 10 MB and can be changed with `MAX_UPLOAD_SIZE` and `MAX_UPLOAD_REQUEST_SIZE`.
 
+## Automated Analysis
+
+Student uploads are analyzed asynchronously. PDF, DOCX, and TXT files are supported. Set `ANTHROPIC_API_KEY` to enable Claude analysis; `CLAUDE_MODEL` selects the model. The scorecard exposes an analysis status (`PENDING`, `COMPLETED`, or `FAILED`) and four rubric scores. Failed API calls are retried up to three times.
+
+The four rubric dimensions are averaged for each assignment. A student's overall score is 80% of their average completed assignment score and 20% of their on-time submission percentage. `/api/submissions/{id}/analysis` returns the analysis result; students can view only their own, while coaches and admins can view any.
+
 ## Build
 
 ```powershell

@@ -33,6 +33,11 @@ management:
       show-details: when-authorized
 
 app:
+  analysis:
+    claude:
+      api-key: ${ANTHROPIC_API_KEY:}
+      model: ${CLAUDE_MODEL:claude-sonnet-4-5-20250929}
+      endpoint: ${CLAUDE_API_ENDPOINT:https://api.anthropic.com/v1/messages}
   storage:
     local-directory: ${UPLOAD_DIRECTORY:./uploads}
   cors:

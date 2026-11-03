@@ -9,6 +9,7 @@ import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
 import com.sharonsoftware.talentbridge.repository.SubmissionRepository;
 import com.sharonsoftware.talentbridge.storage.FileStorage;
+import com.sharonsoftware.talentbridge.analysis.AnalysisScheduler;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
@@ -24,16 +25,19 @@ public class SubmissionService {
     private final StudentProfileRepository studentProfileRepository;
     private final SubmissionRepository submissionRepository;
     private final FileStorage fileStorage;
+    private final AnalysisScheduler analysisScheduler;
 
     public SubmissionService(
             AssignmentRepository assignmentRepository,
             StudentProfileRepository studentProfileRepository,
             SubmissionRepository submissionRepository,
-            FileStorage fileStorage) {
+            FileStorage fileStorage,
+            AnalysisScheduler analysisScheduler) {
         this.assignmentRepository = assignmentRepository;
         this.studentProfileRepository = studentProfileRepository;
         this.submissionRepository = submissionRepository;
         this.fileStorage = fileStorage;
+        this.analysisScheduler = analysisScheduler;
     }
 
     public Submission submit(UUID assignmentId, User user, MultipartFile file) throws IOException {
@@ -62,6 +66,8 @@ public class SubmissionService {
         submission.setOriginalFilename(storedFile.originalFilename());
         submission.setContentType(storedFile.contentType());
         submission.setFileSize(storedFile.size());
-        return submissionRepository.save(submission);
+        Submission savedSubmission = submissionRepository.save(submission);
+        analysisScheduler.schedule(savedSubmission.getId());
+        return savedSubmission;
     }
 }

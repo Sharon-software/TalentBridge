@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -31,6 +32,9 @@ public class StudentProfile {
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
+
+    @Column(name = "overall_score", precision = 5, scale = 2)
+    private BigDecimal overallScore;
 
     public UUID getId() {
         return id;
@@ -58,5 +62,13 @@ public class StudentProfile {
 
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
+    }
+
+    public BigDecimal getOverallScore() {
+        return overallScore;
+    }
+
+    public void setOverallScore(BigDecimal overallScore) {
+        this.overallScore = overallScore;
     }
 }

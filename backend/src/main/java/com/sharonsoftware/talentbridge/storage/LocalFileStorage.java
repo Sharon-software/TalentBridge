@@ -1,6 +1,7 @@
 package com.sharonsoftware.talentbridge.storage;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -29,6 +30,21 @@ public class LocalFileStorage implements FileStorage {
             Files.copy(input, destination);
         }
         return new StoredFile(storageKey, cleanFilename(file.getOriginalFilename()), file.getContentType(), file.getSize());
+    }
+
+    @Override
+    public InputStream open(String storageKey) throws IOException {
+        String validatedKey;
+        try {
+            validatedKey = UUID.fromString(storageKey).toString();
+        } catch (IllegalArgumentException exception) {
+            throw new IOException("Invalid storage key", exception);
+        }
+        Path file = rootDirectory.resolve(validatedKey).normalize();
+        if (!file.startsWith(rootDirectory)) {
+            throw new IOException("Invalid storage key");
+        }
+        return Files.newInputStream(file);
     }
 
     private static String cleanFilename(String filename) {
