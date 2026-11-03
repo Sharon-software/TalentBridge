@@ -35,6 +35,16 @@ The public health endpoint is `http://localhost:8080/actuator/health`. Other rou
 
 Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 minutes by default and refresh tokens 7 days. Set `JWT_SECRET` to a Base64-encoded secret of at least 32 bytes outside local development. Token TTLs can be changed with `JWT_ACCESS_TOKEN_TTL` and `JWT_REFRESH_TOKEN_TTL`. Configure browser origins with the comma-separated `CORS_ALLOWED_ORIGINS` variable.
 
+## Assignments and submissions
+
+- `POST /api/assignments` creates an assignment for a cohort and requires the `COACH` role. Supply `cohortId`, `title`, and an ISO-8601 `dueAt` timestamp.
+- `GET /api/assignments` and `GET /api/assignments/{id}` list and retrieve assignments for authenticated users.
+- `POST /api/submissions?assignmentId={id}` accepts multipart form data with a `file` field and requires the `STUDENT` role. Each student can submit once per assignment; the server records `ON_TIME` or `LATE` against the deadline.
+- `GET /api/submissions/mine` lists the current student's submissions, and `GET /api/submissions/me/punctuality` returns their on-time percentage.
+- `GET /api/submissions/students/punctuality?studentProfileId={id}` returns a student's punctuality summary for coaches and admins.
+
+Uploads are stored under `UPLOAD_DIRECTORY` (default `./uploads`) using generated storage keys. The maximum upload size defaults to 10 MB and can be changed with `MAX_UPLOAD_SIZE` and `MAX_UPLOAD_REQUEST_SIZE`.
+
 ## Build
 
 ```powershell
