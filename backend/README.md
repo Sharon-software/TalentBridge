@@ -52,6 +52,19 @@ Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 min
 - `POST /api/messages/threads/{threadId}/messages` sends a message. `GET /api/messages/unread-count` returns the participant's unread total.
 - WebSocket STOMP clients connect to `/ws`, subscribe to `/user/queue/threads/{threadId}`, and send to `/app/threads/{threadId}/messages`. Send a JWT bearer token in the STOMP `CONNECT` frame's `Authorization` header. Thread subscriptions and sends are checked against participant identity and the active grant.
 
+## CV and Recommendation Letters
+
+- Students manage their own CV entries with `GET/POST /api/cv` and `GET/PUT/DELETE /api/cv/{entryId}`. Ownership comes from the authenticated account; another student's entry is forbidden.
+- Mentors and coaches create drafts with `POST /api/recommendation-letters`, edit their drafts with `PUT /api/recommendation-letters/{letterId}`, and publish with `POST /api/recommendation-letters/{letterId}/publish`.
+- Students list published letters with `GET /api/recommendation-letters/mine`; draft letters stay hidden until published, and students can only view letters belonging to their profile.
+
+## Talent Search and Hiring
+
+- Recruiters and mentors search eligible students with `GET /api/recruiters/students`. Results require a `startDate` at least six months old, are ordered by overall score descending, and support `qualification`, `minYearsExperience`, `skill`, `page`, and `size` query parameters.
+- Experience filters use the earliest dated CV entry; skills are matched case-insensitively against CV skills. CV skills are supplied in the `skills` array when creating or updating an entry.
+- `GET /api/recruiters/students/{studentProfileId}` returns the student's CV, scorecards, and published recommendation letters.
+- Recruiters and mentors create and list their own hire requests with `POST /api/hire-requests` and `GET /api/hire-requests`.
+
 Uploads are stored under `UPLOAD_DIRECTORY` (default `./uploads`) using generated storage keys. The maximum upload size defaults to 10 MB and can be changed with `MAX_UPLOAD_SIZE` and `MAX_UPLOAD_REQUEST_SIZE`.
 
 ## Automated Analysis

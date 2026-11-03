@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class AuthIntegrationTest {
+class AuthIntegrationTest extends DatabaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

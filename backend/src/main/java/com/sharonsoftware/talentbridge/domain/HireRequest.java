@@ -38,6 +38,10 @@ public class HireRequest {
     @JoinColumn(name = "student_profile_id", nullable = false)
     private StudentProfile studentProfile;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requested_by")
+    private User requestedBy;
+
     @Column(name = "company_name", nullable = false, length = 200)
     private String companyName;
 
@@ -53,4 +57,56 @@ public class HireRequest {
 
     @Column(name = "requested_at", nullable = false, updatable = false)
     private Instant requestedAt = Instant.now();
+
+    public UUID getId() {
+        return id;
+    }
+
+    public StudentProfile getStudentProfile() {
+        return studentProfile;
+    }
+
+    public void setStudentProfile(StudentProfile studentProfile) {
+        this.studentProfile = studentProfile;
+    }
+
+    public User getRequestedBy() {
+        return requestedBy;
+    }
+
+    public void setRequestedBy(User requestedBy) {
+        this.requestedBy = requestedBy;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Instant getRequestedAt() {
+        return requestedAt;
+    }
 }

@@ -19,6 +19,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
@@ -79,12 +80,23 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private void authorizeSubscription(StompHeaderAccessor accessor) {
         UUID threadId = extractThreadId(accessor.getDestination(), THREAD_QUEUE_PREFIX, "");
-        messageService.assertCanAccessThread(threadId, authenticatedUserId(accessor));
+        assertThreadAccess(threadId, authenticatedUserId(accessor));
     }
 
     private void authorizeSend(StompHeaderAccessor accessor) {
         UUID threadId = extractThreadId(accessor.getDestination(), APP_THREAD_PREFIX, "/messages");
-        messageService.assertCanAccessThread(threadId, authenticatedUserId(accessor));
+        assertThreadAccess(threadId, authenticatedUserId(accessor));
+    }
+
+    private void assertThreadAccess(UUID threadId, UUID userId) {
+        try {
+            messageService.assertCanAccessThread(threadId, userId);
+        } catch (ResponseStatusException exception) {
+            if (exception.getStatusCode().value() == 403) {
+                throw new AccessDeniedException(exception.getReason(), exception);
+            }
+            throw exception;
+        }
     }
 
     private static UUID extractThreadId(String destination, String prefix, String suffix) {

@@ -11,15 +11,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "qualifications")
-@Getter
-@Setter
-@NoArgsConstructor
 public class Qualification {
 
     @Id
@@ -38,4 +32,40 @@ public class Qualification {
 
     @Column(name = "awarded_at")
     private LocalDate awardedAt;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public StudentProfile getStudentProfile() {
+        return studentProfile;
+    }
+
+    public void setStudentProfile(StudentProfile studentProfile) {
+        this.studentProfile = studentProfile;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getInstitution() {
+        return institution;
+    }
+
+    public void setInstitution(String institution) {
+        this.institution = institution;
+    }
+
+    public LocalDate getAwardedAt() {
+        return awardedAt;
+    }
+
+    public void setAwardedAt(LocalDate awardedAt) {
+        this.awardedAt = awardedAt;
+    }
 }

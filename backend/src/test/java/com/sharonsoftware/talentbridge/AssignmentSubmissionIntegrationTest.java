@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class AssignmentSubmissionIntegrationTest {
+class AssignmentSubmissionIntegrationTest extends DatabaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

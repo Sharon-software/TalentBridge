@@ -53,7 +53,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class MessagingIntegrationTest {
+class MessagingIntegrationTest extends DatabaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

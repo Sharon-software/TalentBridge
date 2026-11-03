@@ -45,7 +45,7 @@ import com.sharonsoftware.talentbridge.analysis.AnalysisScheduler;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class ExternalAccessGrantIntegrationTest {
+class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

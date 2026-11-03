@@ -6,5 +6,6 @@ public enum Role {
     ADMIN,
     MENTOR,
     EMPLOYER,
+    RECRUITER,
     EXTERNAL_MENTOR
 }
