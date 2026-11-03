@@ -45,6 +45,13 @@ Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 min
 - `POST /api/submissions/{submissionId}/external-access-grants` grants an external mentor access; only coaches and mentors can grant, and `expiresAt` is optional.
 - `DELETE /api/submissions/{submissionId}/external-access-grants/{grantId}` revokes a grant. External mentors can download the file or view the analysis only while a matching grant is active and unexpired.
 
+## Messaging
+
+- `POST /api/messages/threads` starts or returns a thread for a submission; students provide `externalMentorId`, while external mentors may start their own thread. An active grant is required.
+- `GET /api/messages/threads` lists the current participant's active-grant threads. `GET /api/messages/threads/{threadId}` reads messages and marks incoming messages as read.
+- `POST /api/messages/threads/{threadId}/messages` sends a message. `GET /api/messages/unread-count` returns the participant's unread total.
+- WebSocket STOMP clients connect to `/ws`, subscribe to `/user/queue/threads/{threadId}`, and send to `/app/threads/{threadId}/messages`. Send a JWT bearer token in the STOMP `CONNECT` frame's `Authorization` header. Thread subscriptions and sends are checked against participant identity and the active grant.
+
 Uploads are stored under `UPLOAD_DIRECTORY` (default `./uploads`) using generated storage keys. The maximum upload size defaults to 10 MB and can be changed with `MAX_UPLOAD_SIZE` and `MAX_UPLOAD_REQUEST_SIZE`.
 
 ## Automated Analysis
