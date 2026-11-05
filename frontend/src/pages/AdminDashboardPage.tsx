@@ -18,7 +18,7 @@ const roleLabels: Record<UserRole, string> = {
   EXTERNAL_MENTOR: 'External Mentor',
   RECRUITER: 'Recruiter',
   ADMIN: 'Admin',
-  EMPLOYER: 'Employer',
+  EMPLOYER: 'Company',
 }
 
 export function AdminDashboardPage({ section = 'dashboard' }: { section?: string }) {

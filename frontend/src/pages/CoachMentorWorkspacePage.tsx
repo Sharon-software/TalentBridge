@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, Award, BriefcaseBusiness, Check, Clock3, FileText, Plus, RefreshCw, Share2, X } from 'lucide-react'
+import { isAxiosError } from 'axios'
+import { ArrowDown, ArrowUp, Award, BriefcaseBusiness, Check, Clock3, Download, FileText, LoaderCircle, Plus, RefreshCw, Share2, X } from 'lucide-react'
 import { api } from '../api'
 import type {
   AssignmentResponse,
@@ -16,6 +17,7 @@ import type {
 import { useAuth } from '../auth/AuthContext'
 import { Badge, DataTable, EmptyState, ScoreRing, Skeleton, StatCard, type DataColumn } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { SubmissionReviewPanel } from '../components/SubmissionReviewPanel'
 
 type SortDirection = 'asc' | 'desc'
 
@@ -117,7 +119,7 @@ export function CoachMentorWorkspacePage({ section = 'dashboard' }: { section?: 
       )}
 
       {selectedStudent && (
-        <StudentDetailDialog
+          <StudentDetailDialog
           key={selectedStudent.studentProfileId}
           student={selectedStudent}
           isCoach={Boolean(isCoach)}
@@ -279,6 +281,7 @@ function StudentDetailDialog({
   onClose: () => void
 }) {
   const [grantSubmission, setGrantSubmission] = useState<WorkspaceSubmissionDetail | null>(null)
+  const [reviewSubmission, setReviewSubmission] = useState<WorkspaceSubmissionDetail | null>(null)
   const [recommendationOpen, setRecommendationOpen] = useState(false)
   const [hireOpen, setHireOpen] = useState(false)
   const detailQuery = useQuery({
@@ -298,7 +301,12 @@ function StudentDetailDialog({
         <div className="space-y-6 p-4 sm:p-6">
           {detailQuery.isPending ? <Skeleton rows={5} /> : detailQuery.isError || !detailQuery.data ? <ErrorNotice message="Student detail could not be loaded." onRetry={() => void detailQuery.refetch()} /> : (
             <>
-              <StudentDetailContent detail={detailQuery.data} />
+              <StudentDetailContent
+                detail={detailQuery.data}
+                onOpenSubmission={(submissionId) => setReviewSubmission(
+                  detailQuery.data!.submissions.find((submission) => submission.id === submissionId) ?? null,
+                )}
+              />
               <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-5 dark:border-slate-800">
                 <button type="button" disabled={authoredLoading} onClick={() => setRecommendationOpen((open) => !open)} className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"><Award size={16} /> Recommend</button>
                 {isMentor && <button type="button" onClick={() => setHireOpen(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-[#0f9d8a] px-3 text-sm font-semibold text-white hover:bg-[#0b8878]"><BriefcaseBusiness size={16} /> Hire</button>}
@@ -312,12 +320,13 @@ function StudentDetailDialog({
       </section>
 
       {grantSubmission && <GrantManager submission={grantSubmission} onClose={() => setGrantSubmission(null)} />}
+      {reviewSubmission && <WorkspaceSubmissionReviewDialog submission={reviewSubmission} studentName={`${student.firstName} ${student.lastName}`} onClose={() => setReviewSubmission(null)} />}
       {hireOpen && <HireRequestDialog student={student} onClose={() => setHireOpen(false)} />}
     </div>
   )
 }
 
-function StudentDetailContent({ detail }: { detail: WorkspaceStudentDetail }) {
+function StudentDetailContent({ detail, onOpenSubmission }: { detail: WorkspaceStudentDetail; onOpenSubmission: (submissionId: string) => void }) {
   const scoreColumns: DataColumn<WorkspaceScoreCardDetail>[] = [
     { key: 'assignment', header: 'Scorecard', render: (row) => row.score == null ? '—' : `${Math.round(row.score)} / 100` },
     { key: 'quality', header: 'Quality', render: (row) => row.quality ?? '—' },
@@ -326,7 +335,7 @@ function StudentDetailContent({ detail }: { detail: WorkspaceStudentDetail }) {
     { key: 'communication', header: 'Communication', render: (row) => row.communication ?? '—' },
   ]
   const submissionColumns: DataColumn<WorkspaceSubmissionDetail>[] = [
-    { key: 'assignment', header: 'Assignment', render: (row) => <span className="font-medium text-slate-900 dark:text-slate-100">{row.assignmentTitle}</span> },
+    { key: 'assignment', header: 'Assignment', render: (row) => <button type="button" onClick={() => onOpenSubmission(row.id)} className="text-left font-medium text-[#0f766e] hover:underline dark:text-teal-300">{row.assignmentTitle}</button> },
     { key: 'submitted', header: 'Submitted', render: (row) => formatDate(row.submittedAt) },
     { key: 'status', header: 'Status', render: (row) => <Badge>{row.status}</Badge> },
     { key: 'analysis', header: 'Analysis', render: (row) => <Badge>{row.analysisStatus ?? 'PENDING'}</Badge> },
@@ -481,4 +490,57 @@ function HireRequestList({ requests, loading, error, onRetry }: { requests: Hire
 
 function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
   return <section role="alert" className="flex items-center justify-between gap-4 rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"><span>{message}</span><button type="button" onClick={onRetry} className="inline-flex shrink-0 items-center gap-2 font-medium"><RefreshCw size={15} /> Retry</button></section>
+}
+
+function WorkspaceSubmissionReviewDialog({ submission, studentName, onClose }: { submission: WorkspaceSubmissionDetail; studentName: string; onClose: () => void }) {
+  const [fileError, setFileError] = useState('')
+  const analysisQuery = useQuery({
+    queryKey: ['workspace-submission-analysis', submission.id],
+    queryFn: async () => {
+      try {
+        return await api.submissions.analysis(submission.id)
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) return null
+        throw error
+      }
+    },
+    refetchInterval: (query) => query.state.data === null || query.state.data?.status === 'COMPLETED' || query.state.data?.status === 'FAILED' ? false : 3000,
+  })
+
+  async function downloadSubmission() {
+    setFileError('')
+    try {
+      const file = await api.submissions.file(submission.id)
+      const url = URL.createObjectURL(file)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = submission.filename || 'submitted-work'
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setFileError('The submitted file could not be opened. Check your access and try again.')
+    }
+  }
+
+  const analysis = analysisQuery.data
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-slate-950/60 p-4">
+      <section role="dialog" aria-modal="true" aria-label={`${submission.assignmentTitle} submission`} className="my-4 max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+          <div><p className="text-xs font-medium uppercase tracking-wide text-[#0f766e] dark:text-teal-300">Submitted assignment</p><h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{submission.assignmentTitle}</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{studentName} · Submitted {formatDate(submission.submittedAt)}</p></div>
+          <button type="button" onClick={onClose} aria-label="Close submission review" className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={18} /></button>
+        </header>
+        <div className="mt-4 flex flex-wrap items-center gap-2"><Badge>{submission.status}</Badge>{submission.analysisStatus && <Badge>{submission.analysisStatus}</Badge>}{submission.filename && <span className="text-xs text-slate-500">{submission.filename}</span>}</div>
+        <button type="button" onClick={() => void downloadSubmission()} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><Download size={15} /> Open submitted file</button>
+        {fileError && <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">{fileError}</p>}
+        <section className="mt-5 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">AI analysis</h3>
+          {analysisQuery.isPending ? <div role="status" className="flex items-center gap-2 text-sm text-slate-500"><LoaderCircle size={16} className="animate-spin" /> Analysis is processing…</div> : analysisQuery.isError ? <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">AI analysis could not be loaded.</p> : analysis?.status === 'FAILED' ? <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{analysis.errorMessage || 'AI analysis failed.'}</p> : analysis?.status === 'COMPLETED' ? (
+            <div className="space-y-3"><p className="text-lg font-semibold text-[#0f766e] dark:text-teal-300">Overall score: {analysis.score == null ? '—' : `${Math.round(analysis.score)} / 100`}</p><div className="grid gap-3 sm:grid-cols-4">{[['Quality', analysis.quality], ['Correctness', analysis.correctness], ['Originality', analysis.originality], ['Communication', analysis.communication]].map(([label, score]) => <div key={label} className="rounded-md bg-slate-50 p-3 dark:bg-slate-800"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900 dark:text-white">{score ?? '—'}</p></div>)}</div></div>
+          ) : <p role="status" className="text-sm text-slate-500 dark:text-slate-400">Analysis has not started yet.</p>}
+        </section>
+        <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800"><SubmissionReviewPanel submissionId={submission.id} kind="review" /></div>
+      </section>
+    </div>
+  )
 }

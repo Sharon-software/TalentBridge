@@ -51,8 +51,10 @@ Each demo account uses the password `TalentBridgeDemo!2026` by default. Override
 | Student | `student@talentbridge.example` |
 | Coach | `coach@talentbridge.example` |
 | Mentor | `mentor@talentbridge.example` |
+| External tutor | `external-tutor@talentbridge.example` |
 | External mentor | `external-mentor@talentbridge.example` |
 | Recruiter | `recruiter@talentbridge.example` |
+| Company | `company@talentbridge.example` |
 | Admin | `admin@talentbridge.example` |
 
 ## Assignments and submissions

@@ -5,24 +5,28 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { roleHomePath, roleLabels, type AppRole } from '../auth/roles'
 
-type LoginRole = Extract<AppRole, 'COACH' | 'MENTOR' | 'STUDENT' | 'EXTERNAL_MENTOR' | 'RECRUITER' | 'ADMIN'>
+type LoginRole = Extract<AppRole, 'COACH' | 'MENTOR' | 'STUDENT' | 'EXTERNAL_TUTOR' | 'EXTERNAL_MENTOR' | 'RECRUITER' | 'EMPLOYER' | 'ADMIN'>
 
-const loginRoles: LoginRole[] = ['STUDENT', 'COACH', 'MENTOR', 'EXTERNAL_MENTOR', 'RECRUITER', 'ADMIN']
+const loginRoles: LoginRole[] = ['STUDENT', 'COACH', 'MENTOR', 'EXTERNAL_TUTOR', 'EXTERNAL_MENTOR', 'RECRUITER', 'EMPLOYER', 'ADMIN']
 const demoPassword = 'TalentBridgeDemo!2026'
 const demoEmails: Record<LoginRole, string> = {
   COACH: 'coach@talentbridge.example',
   MENTOR: 'mentor@talentbridge.example',
   STUDENT: 'student@talentbridge.example',
+  EXTERNAL_TUTOR: 'external-tutor@talentbridge.example',
   EXTERNAL_MENTOR: 'external-mentor@talentbridge.example',
   RECRUITER: 'recruiter@talentbridge.example',
+  EMPLOYER: 'company@talentbridge.example',
   ADMIN: 'admin@talentbridge.example',
 }
 const roleDescriptions: Record<LoginRole, string> = {
   COACH: 'Manage cohorts and assignments, and support student progress.',
   MENTOR: 'Review student progress, write recommendations, and manage hire requests.',
   STUDENT: 'Complete assignments, submit work, and manage your CV and recommendations.',
+  EXTERNAL_TUTOR: 'Review assigned cohort submissions and leave feedback.',
   EXTERNAL_MENTOR: 'Review work shared with you and communicate with students.',
   RECRUITER: 'Search student talent, manage shortlists, and handle hire requests.',
+  EMPLOYER: 'Explore eligible talent, manage shortlists, and track hire requests.',
   ADMIN: 'Manage users, cohorts, and platform activity.',
 }
 

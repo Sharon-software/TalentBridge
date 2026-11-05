@@ -185,6 +185,34 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
                 .andExpect(jsonPath("$").isEmpty());
     }
 
+    @Test
+    void internalMentorCanOpenAndRateStudentSubmission() throws Exception {
+        TestData data = createTestData();
+        User mentor = saveUser("mentor-review@example.com", Role.MENTOR);
+        String mentorToken = jwtService.issueTokenPair(mentor).accessToken();
+
+        mockMvc.perform(post("/api/submissions/{id}/external-access-grants", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + mentorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new GrantRequest(data.externalMentorId(), null))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.submissionId").value(data.firstSubmissionId().toString()));
+
+        mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + mentorToken))
+                .andExpect(status().isOk())
+                .andExpect(content().string("first submission"));
+
+        mockMvc.perform(put("/api/submissions/{id}/review", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + mentorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":4,\"comments\":\"Good work; clarify the trade-offs.\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rating").value(4))
+                .andExpect(jsonPath("$.comments").value("Good work; clarify the trade-offs."))
+                .andExpect(jsonPath("$.authorName").value("Test MENTOR"));
+    }
+
     private TestData createTestData() throws Exception {
         User coach = saveUser("coach@example.com", Role.COACH);
         User externalMentor = saveUser("external@example.com", Role.EXTERNAL_MENTOR);

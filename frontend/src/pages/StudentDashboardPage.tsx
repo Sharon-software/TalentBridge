@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { AlertCircle, CalendarDays, Clock3, RefreshCw, TrendingUp } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import type {
   AssignmentResponse,
@@ -97,6 +98,7 @@ export function StudentDashboardPage() {
     queryKey: ['student-dashboard', user?.id],
     queryFn: loadDashboard,
     enabled: Boolean(user),
+    refetchInterval: 30_000,
   })
 
   if (dashboard.isPending) {
@@ -133,6 +135,9 @@ export function StudentDashboardPage() {
     { label: 'Punctuality', value: data.punctuality?.percentage ?? null },
   ]
   const submittedAssignmentIds = new Set(data.submissions.map((submission) => submission.assignmentId))
+  const assignmentsToSubmit = data.assignments
+    .filter((assignment) => !submittedAssignmentIds.has(assignment.id))
+    .sort((left, right) => (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999'))
   const upcoming = data.assignments
     .filter((assignment) => assignment.dueAt && assignment.dueAt.slice(0, 10) >= data.today && !submittedAssignmentIds.has(assignment.id))
     .sort((left, right) => left.dueAt!.localeCompare(right.dueAt!))
@@ -167,6 +172,23 @@ export function StudentDashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeading firstName={user?.firstName ?? ''} />
+
+      {assignmentsToSubmit.length > 0 && (
+        <section aria-label="Assignments to submit" className="rounded-lg border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/20">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Assignments to submit</h2>
+            <span className="text-xs font-medium text-[#0f766e] dark:text-teal-300">{assignmentsToSubmit.length} awaiting submission</span>
+          </div>
+          <ul className="mt-2 divide-y divide-teal-200/70 dark:divide-teal-900/70">
+            {assignmentsToSubmit.slice(0, 5).map((assignment) => (
+              <li key={assignment.id} className="flex flex-wrap items-center justify-between gap-3 py-3 last:pb-0">
+                <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{assignment.title}</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{assignment.dueAt ? dueLabel(assignment.dueAt, data.today) : 'No due date'}</p></div>
+                <Link to={`/student/assignments?assignmentId=${assignment.id}`} className="shrink-0 text-sm font-semibold text-[#0f766e] hover:underline dark:text-teal-300">Open assignment</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {dashboard.isError && (
         <div role="alert" className="flex items-center justify-between gap-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">

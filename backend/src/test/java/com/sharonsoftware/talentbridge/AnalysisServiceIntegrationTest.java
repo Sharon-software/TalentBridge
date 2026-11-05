@@ -132,6 +132,23 @@ class AnalysisServiceIntegrationTest extends DatabaseIntegrationTest {
         verify(claudeApiClient, times(3)).analyze(anyString());
     }
 
+    @Test
+    void reportsMissingClaudeApiKeyWithoutRetrying() throws Exception {
+        doThrow(new IllegalStateException("ANTHROPIC_API_KEY is not configured"))
+                .when(claudeApiClient).analyze(anyString());
+        TestSubmission testSubmission = createStudentSubmission();
+        MvcResult result = upload(testSubmission);
+        java.util.UUID submissionId = java.util.UUID.fromString(
+                objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText());
+
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            ScoreCard scoreCard = scoreCardRepository.findBySubmissionId(submissionId).orElseThrow();
+            assertEquals(AnalysisStatus.FAILED, scoreCard.getAnalysisStatus());
+            assertEquals("AI analysis is unavailable. Configure ANTHROPIC_API_KEY to enable it.", scoreCard.getErrorMessage());
+        });
+        verify(claudeApiClient, times(1)).analyze(anyString());
+    }
+
     private MvcResult upload(TestSubmission testSubmission) throws Exception {
         return mockMvc.perform(multipart("/api/submissions")
                         .file(new MockMultipartFile(

@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/hire-requests")
-@PreAuthorize("hasAnyRole('RECRUITER', 'MENTOR')")
+@PreAuthorize("hasAnyRole('RECRUITER', 'MENTOR', 'EMPLOYER')")
 public class HireRequestController {
 
     private final HireRequestRepository hireRequestRepository;
@@ -72,6 +73,18 @@ public class HireRequestController {
         return toResponse(hireRequest);
     }
 
+    @PatchMapping("/{requestId}/status")
+    public HireRequestResponse updateStatus(
+            @PathVariable UUID requestId,
+            @Valid @RequestBody UpdateHireRequestStatus update,
+            @AuthenticationPrincipal User requester) {
+        HireRequest hireRequest = hireRequestRepository.findById(requestId)
+                .filter(item -> item.getRequestedBy() != null && item.getRequestedBy().getId().equals(requester.getId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hire request not found"));
+        hireRequest.setStatus(update.status());
+        return toResponse(hireRequestRepository.save(hireRequest));
+    }
+
     private static HireRequestResponse toResponse(HireRequest request) {
         return new HireRequestResponse(
                 request.getId(), request.getStudentProfile().getId(), request.getCompanyName(),
@@ -84,6 +97,9 @@ public class HireRequestController {
             @Email @Size(max = 320) String contactEmail,
             @Size(max = 4000) String message) {
     }
+
+            public record UpdateHireRequestStatus(@NotNull HireRequest.Status status) {
+            }
 
     public record HireRequestResponse(
             UUID id,

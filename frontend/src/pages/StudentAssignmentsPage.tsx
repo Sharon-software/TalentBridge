@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDownToLine, FileText, LoaderCircle, RefreshCw, Upload, X } from 'lucide-react'
 import { api } from '../api'
 import type { AssignmentResponse, SubmissionAnalysisResponse } from '../api/types'
@@ -33,6 +34,7 @@ function isAllowedFile(file: File): boolean {
 
 export function StudentAssignmentsPage() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const { notify } = useToast()
   const fileInput = useRef<HTMLInputElement>(null)
@@ -57,7 +59,11 @@ export function StudentAssignmentsPage() {
     enabled: Boolean(user),
   })
   const assignments = assignmentsQuery.data ?? []
-  const selectedAssignment = assignments.find((assignment) => assignment.id === selectedAssignmentId) ?? assignments[0] ?? null
+  const requestedAssignmentId = searchParams.get('assignmentId')
+  const selectedAssignment = assignments.find((assignment) => assignment.id === selectedAssignmentId)
+    ?? assignments.find((assignment) => assignment.id === requestedAssignmentId)
+    ?? assignments[0]
+    ?? null
   const submissions = submissionsQuery.data ?? []
   const submission = selectedAssignment
     ? submissions.find((item) => item.assignmentId === selectedAssignment.id) ?? null
@@ -164,7 +170,7 @@ export function StudentAssignmentsPage() {
                 <button
                   key={assignment.id}
                   type="button"
-                  onClick={() => { setSelectedAssignmentId(assignment.id); setSelectedFile(null); setFileError('') }}
+                  onClick={() => { setSelectedAssignmentId(assignment.id); setSearchParams({ assignmentId: assignment.id }, { replace: true }); setSelectedFile(null); setFileError('') }}
                   aria-current={isSelected ? 'true' : undefined}
                   className={`block w-full px-3 py-4 text-left transition-colors ${isSelected ? 'bg-teal-50/80 dark:bg-teal-950/30' : 'hover:bg-slate-100 dark:hover:bg-slate-900'}`}
                 >

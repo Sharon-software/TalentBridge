@@ -73,10 +73,18 @@ public class AnalysisService {
             transactionTemplate.executeWithoutResult(transactionStatus ->
                     scoreCardRepository.findBySubmissionId(submissionId).ifPresent(scoreCard -> {
                         scoreCard.setAnalysisStatus(AnalysisStatus.FAILED);
-                        scoreCard.setErrorMessage("Analysis failed after retrying the Claude API");
+                        scoreCard.setErrorMessage(failureMessage(exception));
                         scoreCardRepository.save(scoreCard);
                     }));
         }
+    }
+
+    private static String failureMessage(Exception exception) {
+        if (exception instanceof IllegalStateException
+                && "ANTHROPIC_API_KEY is not configured".equals(exception.getMessage())) {
+            return "AI analysis is unavailable. Configure ANTHROPIC_API_KEY to enable it.";
+        }
+        return "Analysis failed after retrying the Claude API";
     }
 
     private AnalysisResult analyzeWithRetries(String text) {
@@ -87,6 +95,10 @@ public class AnalysisService {
                 validate(result);
                 return result;
             } catch (RuntimeException exception) {
+                if (exception instanceof IllegalStateException
+                        && "ANTHROPIC_API_KEY is not configured".equals(exception.getMessage())) {
+                    throw exception;
+                }
                 lastFailure = exception;
                 if (attempt < MAX_API_ATTEMPTS) {
                     try {

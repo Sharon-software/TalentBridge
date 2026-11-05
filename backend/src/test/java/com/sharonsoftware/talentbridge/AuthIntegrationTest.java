@@ -2,6 +2,7 @@ package com.sharonsoftware.talentbridge;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -127,6 +128,33 @@ class AuthIntegrationTest extends DatabaseIntegrationTest {
                                 {"email":"missing@example.com","password":"wrong-password"}
                                 """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void studentCanReadAndUpdateTheirProfile() throws Exception {
+        String registrationResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"profile-student@example.com","password":"correct-horse","firstName":"Pat","lastName":"Profile"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String accessToken = objectMapper.readTree(registrationResult).get("accessToken").asText();
+
+        mockMvc.perform(put("/api/student/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"bio":"ICT student focused on cloud development.","photoUrl":"https://example.com/profile.jpg"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bio").value("ICT student focused on cloud development."))
+                .andExpect(jsonPath("$.photoUrl").value("https://example.com/profile.jpg"));
+
+        mockMvc.perform(get("/api/student/profile").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Pat"))
+                .andExpect(jsonPath("$.bio").value("ICT student focused on cloud development."));
     }
 
     @Test

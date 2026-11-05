@@ -33,6 +33,8 @@ import type {
   SendMessageRequest,
   StudentDetail,
   StudentPage,
+  StudentProfileRequest,
+  StudentProfileResponse,
   SubmissionAnalysisResponse,
   SubmissionReviewRequest,
   SubmissionReviewResponse,
@@ -165,6 +167,12 @@ const cvApi = {
   remove: async (id: UUID) => apiClient.delete(`/api/cv/${id}`),
 }
 
+const studentProfileApi = {
+  get: async () => (await apiClient.get<StudentProfileResponse>('/api/student/profile')).data,
+  update: async (request: StudentProfileRequest) =>
+    (await apiClient.put<StudentProfileResponse>('/api/student/profile', request)).data,
+}
+
 const recommendationApi = {
   authored: async () => (await apiClient.get<RecommendationLetterResponse[]>('/api/recommendation-letters/authored')).data,
   createDraft: async (request: CreateRecommendationLetterRequest) =>
@@ -193,6 +201,8 @@ const hireRequestApi = {
     (await apiClient.post<HireRequestResponse>('/api/hire-requests', request)).data,
   list: async () => (await apiClient.get<HireRequestResponse[]>('/api/hire-requests')).data,
   get: async (id: UUID) => (await apiClient.get<HireRequestResponse>(`/api/hire-requests/${id}`)).data,
+  updateStatus: async (id: UUID, status: HireRequestResponse['status']) =>
+    (await apiClient.patch<HireRequestResponse>(`/api/hire-requests/${id}/status`, { status })).data,
 }
 
 const talentApi = {
@@ -213,6 +223,7 @@ export const api = {
   externalMentor: externalMentorApi,
   externalAccess: externalAccessApi,
   cv: cvApi,
+  studentProfile: studentProfileApi,
   recommendationLetters: recommendationApi,
   messages: messagingApi,
   hireRequests: hireRequestApi,

@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:${SERVER_PORT:8080}}
 
 spring:
   application:
@@ -9,7 +9,7 @@ spring:
       max-file-size: ${MAX_UPLOAD_SIZE:10MB}
       max-request-size: ${MAX_UPLOAD_REQUEST_SIZE:10MB}
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/talentbridge}
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:talentbridge}}
     username: ${DB_USERNAME:talentbridge}
     password: ${DB_PASSWORD:talentbridge}
   jpa:
@@ -35,6 +35,9 @@ management:
 app:
   demo:
     password: ${DEMO_ACCOUNT_PASSWORD:TalentBridgeDemo!2026}
+  bootstrap-admin:
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
   analysis:
     claude:
       api-key: ${ANTHROPIC_API_KEY:}

@@ -3,6 +3,7 @@ import {
   Bookmark,
   BookOpenCheck,
   BriefcaseBusiness,
+  CheckCircle2,
   FileUser,
   GraduationCap,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
   Share2,
   Settings2,
   Users,
+  UserRound,
   type LucideIcon,
 } from 'lucide-react'
 import type { UserRole } from '../api/types'
@@ -37,7 +39,7 @@ export const roleLabels: Record<AppRole, string> = {
   EXTERNAL_MENTOR: 'External Mentor',
   RECRUITER: 'Recruiter',
   ADMIN: 'Admin',
-  EMPLOYER: 'Employer',
+  EMPLOYER: 'Company',
 }
 
 export const roleHomeSections: Record<AppRole, string> = {
@@ -48,7 +50,7 @@ export const roleHomeSections: Record<AppRole, string> = {
   EXTERNAL_MENTOR: 'dashboard',
   RECRUITER: 'talent',
   ADMIN: 'dashboard',
-  EMPLOYER: 'dashboard',
+  EMPLOYER: 'talent',
 }
 
 export function roleHomePath(role: AppRole): string {
@@ -66,6 +68,7 @@ const dashboard: NavigationItem = { label: 'Dashboard', section: 'dashboard', ic
 export const roleNavigation: Record<AppRole, NavigationItem[]> = {
   STUDENT: [
     dashboard,
+    { label: 'Profile', section: 'profile', icon: UserRound },
     { label: 'Submit work', section: 'assignments', icon: BookOpenCheck },
     { label: 'My CV', section: 'cv', icon: FileUser },
     { label: 'Recommendations', section: 'recommendations', icon: Award },
@@ -96,6 +99,8 @@ export const roleNavigation: Record<AppRole, NavigationItem[]> = {
   RECRUITER: [
     { label: 'Talent board', section: 'talent', icon: Search },
     { label: 'Shortlist', section: 'shortlist', icon: Bookmark },
+    { label: 'Hire requests', section: 'hire-requests', icon: BriefcaseBusiness },
+    { label: 'Hired', section: 'hired', icon: CheckCircle2 },
   ],
   ADMIN: [
     { label: 'Platform', section: 'dashboard', icon: LayoutDashboard },
@@ -104,9 +109,10 @@ export const roleNavigation: Record<AppRole, NavigationItem[]> = {
     { label: 'Settings', section: 'settings', icon: Settings2 },
   ],
   EMPLOYER: [
-    dashboard,
-    { label: 'Talent', section: 'talent', icon: Search },
+    { label: 'Talent board', section: 'talent', icon: Search },
+    { label: 'Shortlist', section: 'shortlist', icon: Bookmark },
     { label: 'Hire requests', section: 'hire-requests', icon: Mail },
+    { label: 'Hired', section: 'hired', icon: CheckCircle2 },
   ],
 }
 

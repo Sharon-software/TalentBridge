@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { Bookmark, BriefcaseBusiness, Check, ChevronLeft, ChevronRight, RefreshCw, Search, X } from 'lucide-react'
 import { api } from '../api'
-import type { CreateHireRequest, StudentDetail, StudentSummary, TalentSearchParams } from '../api/types'
+import type { CreateHireRequest, HireRequestResponse, HireRequestStatus, StudentDetail, StudentSummary, TalentSearchParams } from '../api/types'
 import { useToast } from '../components/Toast'
 import { Badge, EmptyState, Skeleton, StatCard } from '../components/ui'
 
@@ -18,6 +18,10 @@ interface AppliedFilters {
 }
 
 const emptyFilters = (): AppliedFilters => ({ qualifications: [], minYearsExperience: '', skill: '', search: '' })
+
+interface HireRequestWithStudent extends HireRequestResponse {
+  student: StudentDetail | null
+}
 
 function readShortlist(): string[] {
   try {
@@ -36,8 +40,9 @@ function yearsLabel(years: number): string {
   return `${years} ${years === 1 ? 'year' : 'years'} experience`
 }
 
-export function RecruiterDashboardPage({ section = 'talent' }: { section?: string }) {
+export function RecruiterDashboardPage({ section = 'talent' }: { section?: 'talent' | 'shortlist' | 'hire-requests' | 'hired' }) {
   const { notify } = useToast()
+  const queryClient = useQueryClient()
   const [shortlistIds, setShortlistIds] = useState<string[]>(readShortlist)
   const [filters, setFilters] = useState<AppliedFilters>(emptyFilters)
   const [draftFilters, setDraftFilters] = useState<AppliedFilters>(emptyFilters)
@@ -82,6 +87,29 @@ export function RecruiterDashboardPage({ section = 'talent' }: { section?: strin
     },
     enabled: section === 'shortlist' && shortlistIds.length > 0,
   })
+  const hireRequestsQuery = useQuery({
+    queryKey: ['recruiter-hire-requests'],
+    queryFn: async (): Promise<HireRequestWithStudent[]> => {
+      const requests = await api.hireRequests.list()
+      return Promise.all(requests.map(async (request) => {
+        try {
+          return { ...request, student: await api.talent.detail(request.studentProfileId) }
+        } catch (error) {
+          if (isAxiosError(error) && error.response?.status === 404) return { ...request, student: null }
+          throw error
+        }
+      }))
+    },
+    enabled: section === 'hire-requests' || section === 'hired',
+  })
+  const updateHireStatus = useMutation({
+    mutationFn: ({ requestId, status }: { requestId: string; status: HireRequestStatus }) => api.hireRequests.updateStatus(requestId, status),
+    onSuccess: async (request) => {
+      await queryClient.invalidateQueries({ queryKey: ['recruiter-hire-requests'] })
+      notify(request.status === 'ACCEPTED' ? 'Candidate marked as hired.' : request.status === 'DECLINED' ? 'Hire request declined.' : 'Candidate moved back to hire requests.', 'success')
+    },
+    onError: () => notify('The hire request status could not be updated.', 'error'),
+  })
 
   function toggleShortlist(studentProfileId: string) {
     const isSaved = shortlistIds.includes(studentProfileId)
@@ -120,6 +148,23 @@ export function RecruiterDashboardPage({ section = 'talent' }: { section?: strin
     )
   }
 
+  if (section === 'hire-requests' || section === 'hired') {
+    const requests = (hireRequestsQuery.data ?? []).filter((request) => section === 'hired' ? request.status === 'ACCEPTED' : request.status !== 'ACCEPTED')
+    return (
+      <HireRequestsPage
+        section={section}
+        requests={requests}
+        loading={hireRequestsQuery.isPending}
+        error={hireRequestsQuery.isError}
+        onRetry={() => void hireRequestsQuery.refetch()}
+        onStatusChange={(requestId, status) => updateHireStatus.mutate({ requestId, status })}
+        onViewStudent={(student) => setSelectedStudent(student)}
+      >
+        {selectedStudent && <RecruiterStudentDetailDialog key={selectedStudent.studentProfileId} student={selectedStudent} shortlisted={shortlistIds.includes(selectedStudent.studentProfileId)} onToggleShortlist={() => toggleShortlist(selectedStudent.studentProfileId)} onClose={() => setSelectedStudent(null)} />}
+      </HireRequestsPage>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <PageHeading shortlistCount={shortlistIds.length} section="talent" />
@@ -151,7 +196,54 @@ export function RecruiterDashboardPage({ section = 'talent' }: { section?: strin
   )
 }
 
-function PageHeading({ shortlistCount, section }: { shortlistCount: number; section: 'talent' | 'shortlist' }) {
+function HireRequestsPage({
+  section,
+  requests,
+  loading,
+  error,
+  onRetry,
+  onStatusChange,
+  onViewStudent,
+  children,
+}: {
+  section: 'hire-requests' | 'hired'
+  requests: HireRequestWithStudent[]
+  loading: boolean
+  error: boolean
+  onRetry: () => void
+  onStatusChange: (requestId: string, status: HireRequestStatus) => void
+  onViewStudent: (student: StudentSummary) => void
+  children: React.ReactNode
+}) {
+  const isHiredList = section === 'hired'
+  return (
+    <div className="space-y-6">
+      <header><p className="text-sm font-medium text-[#0f9d8a]">Recruiter workspace</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{isHiredList ? 'Hired' : 'Hire requests'}</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{isHiredList ? 'Candidates with an accepted hire request.' : 'Review pending and declined candidates.'}</p></header>
+      {loading ? <Skeleton rows={4} /> : error ? <ErrorNotice message="Hire requests could not be loaded." onRetry={onRetry} /> : requests.length ? (
+        <ul className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+          {requests.map((request) => (
+            <li key={request.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{request.student ? `${request.student.student.firstName} ${request.student.student.lastName}` : 'Candidate profile unavailable'}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{request.companyName}{request.contactEmail ? ` · ${request.contactEmail}` : ''}</p>
+                {request.message && <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{request.message}</p>}
+                <p className="mt-1 text-xs text-slate-500">Requested {formatDate(request.requestedAt)} · {request.status}</p>
+              </div>
+              <div className="flex flex-wrap gap-2 self-end sm:self-auto">
+                {request.student && <button type="button" onClick={() => onViewStudent(request.student!.student)} className="h-9 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">View profile</button>}
+                {!isHiredList && request.status === 'PENDING' && <button type="button" onClick={() => onStatusChange(request.id, 'DECLINED')} className="h-9 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Decline</button>}
+                {request.status !== 'ACCEPTED' ? <button type="button" onClick={() => onStatusChange(request.id, 'ACCEPTED')} className="h-9 rounded-md bg-[#0f9d8a] px-3 text-sm font-semibold text-white hover:bg-[#0b8878]">Mark hired</button> : <button type="button" onClick={() => onStatusChange(request.id, 'PENDING')} className="h-9 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Move to requests</button>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : <EmptyState title={isHiredList ? 'No hired candidates' : 'No hire requests'} description={isHiredList ? 'Accepted candidates will appear here.' : 'Hire requests from your talent workflow will appear here.'} />}
+      {children}
+    </div>
+  )
+}
+
+function PageHeading({ shortlistCount, section }: { shortlistCount: number; section: 'talent' | 'shortlist' | 'hire-requests' | 'hired' }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-medium text-[#0f9d8a]">Recruiter workspace</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{section === 'shortlist' ? 'Shortlist' : 'Talent board'}</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Students become eligible after six months in the program.</p></div><a href="/recruiter/shortlist" className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"><Bookmark size={15} /> Shortlist <span className="tabular-nums text-slate-500">{shortlistCount}</span></a></header>
   )

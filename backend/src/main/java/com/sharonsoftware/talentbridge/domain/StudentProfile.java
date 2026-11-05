@@ -36,6 +36,12 @@ public class StudentProfile {
     @Column(name = "overall_score", precision = 5, scale = 2)
     private BigDecimal overallScore;
 
+    @Column(columnDefinition = "text")
+    private String bio;
+
+    @Column(name = "photo_url", length = 1000)
+    private String photoUrl;
+
     public UUID getId() {
         return id;
     }
@@ -70,5 +76,21 @@ public class StudentProfile {
 
     public void setOverallScore(BigDecimal overallScore) {
         this.overallScore = overallScore;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

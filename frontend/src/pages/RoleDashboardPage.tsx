@@ -9,6 +9,7 @@ import { StudentCvPage } from './StudentCvPage'
 import { StudentDashboardPage } from './StudentDashboardPage'
 import { StudentMessagesPage } from './StudentMessagesPage'
 import { StudentRecommendationsPage } from './StudentRecommendationsPage'
+import { StudentProfilePage } from './StudentProfilePage'
 import { CoachMentorWorkspacePage } from './CoachMentorWorkspacePage'
 import { Skeleton } from '../components/ui'
 
@@ -51,14 +52,16 @@ export function RoleDashboardPage() {
     if (section === 'dashboard' || section === 'submissions') return <Suspense fallback={<Skeleton rows={5} />}><ExternalMentorDashboardPage /></Suspense>
     if (section === 'messages') return <StudentMessagesPage />
   }
-  if (routeRole === 'RECRUITER' && (section === 'talent' || section === 'shortlist')) {
-    return <Suspense fallback={<Skeleton rows={5} />}><RecruiterDashboardPage section={section} /></Suspense>
+  if ((routeRole === 'RECRUITER' || routeRole === 'EMPLOYER') && ['talent', 'shortlist', 'hire-requests', 'hired'].includes(section)) {
+    const recruiterSection = section as 'talent' | 'shortlist' | 'hire-requests' | 'hired'
+    return <Suspense fallback={<Skeleton rows={5} />}><RecruiterDashboardPage section={recruiterSection} /></Suspense>
   }
   if (routeRole === 'ADMIN' && ['dashboard', 'users', 'cohorts', 'settings'].includes(section)) {
     return <Suspense fallback={<Skeleton rows={5} />}><AdminDashboardPage section={section} /></Suspense>
   }
   if (routeRole === 'STUDENT') {
     if (section === 'dashboard') return <StudentDashboardPage />
+    if (section === 'profile') return <StudentProfilePage />
     if (section === 'assignments' || section === 'submissions') return <StudentAssignmentsPage />
     if (section === 'cv') return <StudentCvPage />
     if (section === 'recommendations') return <StudentRecommendationsPage />

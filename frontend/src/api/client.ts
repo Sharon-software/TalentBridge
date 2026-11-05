@@ -19,7 +19,7 @@ export const clearTokens = (): void => {
 }
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin),
   headers: { Accept: 'application/json' },
 })
 

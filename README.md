@@ -1,66 +1,75 @@
-Block 12: Auth, layout and role routing
-
-Build the login page, an AuthContext (token + user + role from /api/me), and
-protected routes by role: STUDENT, COACH, MENTOR, EXTERNAL_TUTOR,
-EXTERNAL_MENTOR, RECRUITER, ADMIN. Build the app shell: sidebar with role-based
-navigation, top bar with profile menu and logout, light/dark mode. Design:
-deep navy (#14213d) and teal (#0f9d8a), clean cards, responsive. Add shared
-components: ScoreRing, StatCard, DataTable, Badge, EmptyState, Skeleton, Toast.
-Each role lands on a placeholder dashboard page. Test with the seeded demo users.
-
-Block 13: Student dashboard
-
-Build the Student dashboard using real API data: overall score ring, scorecard
-breakdown (quality, correctness, originality, communication, punctuality),
-on-time vs late chart, upcoming deadlines, recent assignments with status and
-score, and a month-of-6 progress bar. Add loading, empty and error states.
-Tell me what to test.
-
-Block 14: Student submissions, CV and messages
-
-Build for the student: (1) assignment list and submission page with drag-and-drop
-upload, deadline countdown, and an AI analysis status that polls until the score
-card is ready, then shows the full report; (2) the editable CV page (CRUD for
-education, experience, skills, certifications) with a PDF download; (3) a
-published recommendation letters page; (4) a private messages page with the
-WebSocket connection to external mentors. Stop after each of the four and tell
-me what to test.
-
-Block 15: Coach and Mentor
-
-Build the Coach and Mentor dashboards: cohort list, student table sortable by
-overall score with "falling behind" flags, student detail (scorecard,
-submissions, punctuality), create-assignment form for coaches, a "Share with
-external mentor" modal (mentor, assignment, expiry) with a list of active grants
-and a revoke button, a recommendation letter editor (draft, publish), and a
-"Hire / Recommend" button. Tell me what to test.
-
-Block 16: External Tutor and External Mentor
-
-Build the External Tutor dashboard (assigned cohorts, submissions, feedback
-form) and the External Mentor dashboard: ONLY assignments with an active grant,
-an expiry indicator, a review panel (comments, rating) and private chat with the
-student. Confirm in the UI that a revoked or expired grant disappears and the
-API returns 403 for anything not shared.
-
-Block 17: Recruiter
-
-Build the Recruiter dashboard: ranked talent board (highest overall score
-first) with paginated cards, filters for ICT qualification (multi-select),
-years of experience, skills and search, a student detail page (CV, scorecard,
-published letters), a Hire button with confirmation, and a shortlist page.
-Only students at 6+ months should appear. Tell me what to test.
-
-Block 18: Admin
-
-Build the Admin dashboard: user list, create user, role assignment, cohort
-management, and platform stats. Use the existing admin endpoints; if stats
-endpoints are missing, add them to the backend with tests first.
-
-Block 19: Hardening
-
-Add global exception handling, rate limiting on login, audit logging for access
 grants and hire requests, file size and type validation, OpenAPI docs, and
-Dockerfiles for backend and frontend plus a docker-compose that runs the whole
-stack. On the frontend, add an error boundary, a friendly 403/404 page, and
-form validation messages.
+# TalentBridge
+
+TalentBridge connects students, coaches, mentors, external reviewers, recruiters, and administrators around cohort learning and career readiness. It includes role-specific workspaces backed by a Spring Boot API and PostgreSQL.
+
+## Features
+
+- Students track progress, submit assignments for analysis, maintain a CV, view recommendations, and message external mentors.
+- Coaches and mentors review cohort progress, manage student access, write recommendations, and support hiring.
+- External mentors review only work shared with them and provide feedback and private messages.
+- Recruiters search eligible student profiles, build shortlists, and manage hire requests.
+- Administrators manage users, assign students to cohorts, and view platform activity.
+
+## Stack
+
+- Frontend: React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router
+- Backend: Java 21, Spring Boot, Spring Security, JWT, JPA, Flyway
+- Database: PostgreSQL; an in-memory H2 database is available in demo mode
+
+## Run Locally
+
+Requirements: Node.js 20.19+ or 22.12+, npm, Java 21, and Maven 3.9+.
+
+For a quick demo without Docker or PostgreSQL, start the backend in demo mode:
+
+```powershell
+cd backend
+$env:SPRING_PROFILES_ACTIVE = "demo"
+mvn spring-boot:run
+```
+
+In a second terminal, start the frontend:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. The demo backend is at `http://localhost:8080`. Demo accounts and their shared password are documented in [backend/README.md](backend/README.md). Demo data is temporary and credentials are for local testing only.
+
+To use PostgreSQL instead, start the database with `docker compose up -d` from `backend/`, then run `mvn spring-boot:run` without the demo profile.
+
+## Checks
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+```
+
+```powershell
+cd backend
+mvn test
+```
+
+## Deploy on Render
+
+The root `render.yaml` defines a single Docker web service with the frontend and API served from the same origin, plus a managed PostgreSQL database. To deploy:
+
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint** and connect `Sharon-software/TalentBridge` on the `main` branch.
+3. Enter `BOOTSTRAP_ADMIN_EMAIL` and a unique `BOOTSTRAP_ADMIN_PASSWORD` of at least 12 characters when prompted. Render generates the JWT signing secret.
+4. Deploy the Blueprint. Render will provide the public `onrender.com` URL when provisioning finishes.
+
+This Blueprint uses free-tier resources for a demo. Free databases may expire, and uploaded files on the free web service are not durable across restarts. For production, use a paid persistent database and object storage for uploads. Set `ANTHROPIC_API_KEY` in the Render service settings to enable automated analysis.
+
+## Repository Layout
+
+```text
+backend/   Spring Boot API, migrations, and integration tests
+frontend/  React application
+Dockerfile Root full-stack container used by Render
+render.yaml Render web service and PostgreSQL Blueprint
+```

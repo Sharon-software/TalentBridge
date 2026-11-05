@@ -35,7 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/recruiters/students")
-@PreAuthorize("hasAnyRole('RECRUITER', 'MENTOR')")
+@PreAuthorize("hasAnyRole('RECRUITER', 'MENTOR', 'EMPLOYER')")
 public class TalentSearchController {
 
     private static final int MAX_PAGE_SIZE = 100;

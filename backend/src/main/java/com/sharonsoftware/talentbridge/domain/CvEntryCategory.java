@@ -4,5 +4,6 @@ public enum CvEntryCategory {
     EDUCATION,
     EXPERIENCE,
     SKILLS,
-    CERTIFICATION
+    CERTIFICATION,
+    PROJECT
 }

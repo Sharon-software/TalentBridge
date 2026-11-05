@@ -1,0 +1,8 @@
+.git
+**/node_modules
+frontend/dist
+frontend/.env*
+!frontend/.env.example
+backend/target
+backend/uploads
+**/uploads

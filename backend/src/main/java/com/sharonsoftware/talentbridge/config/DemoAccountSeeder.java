@@ -22,8 +22,10 @@ public class DemoAccountSeeder implements ApplicationRunner {
             new DemoAccount("student@talentbridge.example", "Student", Role.STUDENT),
             new DemoAccount("coach@talentbridge.example", "Coach", Role.COACH),
             new DemoAccount("mentor@talentbridge.example", "Mentor", Role.MENTOR),
+            new DemoAccount("external-tutor@talentbridge.example", "External Tutor", Role.EXTERNAL_TUTOR),
             new DemoAccount("recruiter@talentbridge.example", "Recruiter", Role.RECRUITER),
             new DemoAccount("external-mentor@talentbridge.example", "External Mentor", Role.EXTERNAL_MENTOR),
+            new DemoAccount("company@talentbridge.example", "Company", Role.EMPLOYER),
             new DemoAccount("admin@talentbridge.example", "Admin", Role.ADMIN));
 
     private final UserRepository userRepository;

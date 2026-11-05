@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: talentbridge
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: talentbridge-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: talentbridge-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: talentbridge-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: talentbridge-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: talentbridge-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      - key: UPLOAD_DIRECTORY
+        value: /tmp/talentbridge-uploads
+
+databases:
+  - name: talentbridge-db
+    databaseName: talentbridge
+    user: talentbridge
+    plan: free
+    postgresMajorVersion: "17"

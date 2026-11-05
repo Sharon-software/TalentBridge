@@ -107,7 +107,7 @@ public class CoachMentorWorkspaceController {
                     ScoreCard scoreCard = scoreCardsBySubmission.get(submission.getId());
                     return new SubmissionDetail(
                             submission.getId(), submission.getAssignment().getId(), submission.getAssignment().getTitle(),
-                            submission.getAssignment().getDueAt(), submission.getSubmittedAt(), submission.getStatus(),
+                            submission.getOriginalFilename(), submission.getAssignment().getDueAt(), submission.getSubmittedAt(), submission.getStatus(),
                             scoreCard == null ? null : scoreCard.getAnalysisStatus(),
                             scoreCard == null ? null : scoreCard.getScore());
                 })
@@ -203,6 +203,7 @@ public class CoachMentorWorkspaceController {
             UUID id,
             UUID assignmentId,
             String assignmentTitle,
+            String filename,
             Instant dueAt,
             Instant submittedAt,
             SubmissionStatus status,

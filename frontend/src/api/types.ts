@@ -43,6 +43,23 @@ export interface MeResponse {
   startDate?: ISODate | null
 }
 
+export interface StudentProfileResponse {
+  studentProfileId: UUID
+  firstName: string
+  lastName: string
+  email: string
+  bio: string | null
+  photoUrl: string | null
+  startDate: ISODate
+  overallScore: number | null
+  cohortName: string | null
+}
+
+export interface StudentProfileRequest {
+  bio: string | null
+  photoUrl: string | null
+}
+
 export interface ErrorResponse {
   error: string
 }
@@ -116,6 +133,7 @@ export interface WorkspaceSubmissionDetail {
   id: UUID
   assignmentId: UUID
   assignmentTitle: string
+  filename: string | null
   dueAt: ISODateTime | null
   submittedAt: ISODateTime
   status: SubmissionStatus
@@ -277,7 +295,7 @@ export interface GrantResponse {
   revoked: boolean
 }
 
-export type CvEntryCategory = 'EDUCATION' | 'EXPERIENCE' | 'SKILLS' | 'CERTIFICATION'
+export type CvEntryCategory = 'EDUCATION' | 'EXPERIENCE' | 'SKILLS' | 'CERTIFICATION' | 'PROJECT'
 
 export interface CvEntryRequest {
   title: string

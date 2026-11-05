@@ -30,7 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/submissions/{submissionId}/review")
-@PreAuthorize("hasAnyRole('EXTERNAL_TUTOR', 'EXTERNAL_MENTOR')")
+@PreAuthorize("hasAnyRole('COACH', 'MENTOR', 'EXTERNAL_TUTOR', 'EXTERNAL_MENTOR')")
 public class SubmissionReviewController {
 
     private final SubmissionRepository submissionRepository;
@@ -80,6 +80,9 @@ public class SubmissionReviewController {
     private Submission requireAccess(UUID submissionId, User user) {
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+        if (user.getRole() == Role.COACH || user.getRole() == Role.MENTOR) {
+            return submission;
+        }
         if (user.getRole() == Role.EXTERNAL_MENTOR
                 && grantRepository.hasActiveGrant(submissionId, user.getId(), Instant.now())) {
             return submission;

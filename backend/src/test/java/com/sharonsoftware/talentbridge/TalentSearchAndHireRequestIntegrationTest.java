@@ -43,6 +43,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -188,12 +189,14 @@ class TalentSearchAndHireRequestIntegrationTest extends DatabaseIntegrationTest 
     void recruiterAndMentorCanCreateHireRequestsButStudentsCannot() throws Exception {
         String request = objectMapper.writeValueAsString(
                 new HireRequestBody(studentProfile.getId(), "Northwind", "hiring@example.com", "Please contact me."));
-        mockMvc.perform(post("/api/hire-requests")
+        MvcResult hireResult = mockMvc.perform(post("/api/hire-requests")
                         .header("Authorization", bearer(recruiter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andReturn();
+        String hireRequestId = objectMapper.readTree(hireResult.getResponse().getContentAsString()).get("id").asText();
         mockMvc.perform(post("/api/hire-requests")
                         .header("Authorization", bearer(mentor))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -207,6 +210,13 @@ class TalentSearchAndHireRequestIntegrationTest extends DatabaseIntegrationTest 
         mockMvc.perform(get("/api/hire-requests").header("Authorization", bearer(recruiter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].companyName").value("Northwind"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                                "/api/hire-requests/{requestId}/status", hireRequestId)
+                        .header("Authorization", bearer(recruiter))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ACCEPTED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACCEPTED"));
     }
 
     @Test

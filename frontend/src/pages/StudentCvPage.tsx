@@ -12,6 +12,7 @@ const categories: Array<{ value: CvEntryCategory; label: string }> = [
   { value: 'EXPERIENCE', label: 'Experience' },
   { value: 'SKILLS', label: 'Skills' },
   { value: 'CERTIFICATION', label: 'Certifications' },
+  { value: 'PROJECT', label: 'Projects' },
 ]
 
 interface CvFormState {
