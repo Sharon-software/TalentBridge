@@ -8,6 +8,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RecommendationLetterRepository extends JpaRepository<RecommendationLetter, UUID> {
+	List<RecommendationLetter> findAllByAuthorIdOrderByCreatedAtDesc(UUID authorId);
+
 	List<RecommendationLetter> findAllByStudentProfileIdAndStatusOrderByPublishedAtDesc(
 			UUID studentProfileId,
 			RecommendationLetterStatus status);

@@ -70,6 +70,64 @@ export interface CohortResponse {
   endDate: ISODate | null
 }
 
+export interface WorkspaceCohortResponse extends CohortResponse {
+  studentCount: number
+  assignmentCount: number
+}
+
+export interface WorkspaceStudentSummary {
+  studentProfileId: UUID
+  firstName: string
+  lastName: string
+  startDate: ISODate
+  overallScore: number | null
+  totalSubmissions: number
+  onTimePercentage: number
+  fallingBehind: boolean
+}
+
+export interface WorkspaceSubmissionDetail {
+  id: UUID
+  assignmentId: UUID
+  assignmentTitle: string
+  dueAt: ISODateTime | null
+  submittedAt: ISODateTime
+  status: SubmissionStatus
+  analysisStatus: AnalysisStatus | null
+  score: number | null
+}
+
+export interface WorkspaceScoreCardDetail {
+  submissionId: UUID
+  status: AnalysisStatus
+  score: number | null
+  quality: number | null
+  correctness: number | null
+  originality: number | null
+  communication: number | null
+  strengths: string[] | null
+  weaknesses: string[] | null
+  suggestions: string[] | null
+}
+
+export interface WorkspaceStudentDetail {
+  student: WorkspaceStudentSummary
+  submissions: WorkspaceSubmissionDetail[]
+  scoreCards: WorkspaceScoreCardDetail[]
+  punctuality: {
+    totalSubmissions: number
+    onTimeSubmissions: number
+    percentage: number
+  }
+}
+
+export interface ExternalMentorSummary {
+  id: UUID
+  firstName: string
+  lastName: string
+  email: string
+}
+
 export interface CreateAssignmentRequest {
   cohortId: UUID
   title: string
@@ -129,6 +187,7 @@ export interface GrantResponse {
   id: UUID
   submissionId: UUID
   externalMentorId: UUID
+  externalMentorName: string
   expiresAt: ISODateTime | null
   revoked: boolean
 }

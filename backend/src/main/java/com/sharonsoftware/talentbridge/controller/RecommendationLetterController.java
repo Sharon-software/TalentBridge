@@ -94,6 +94,14 @@ public class RecommendationLetterController {
                 .stream().map(RecommendationLetterController::toResponse).toList();
     }
 
+    @GetMapping("/authored")
+    @PreAuthorize("hasAnyRole('MENTOR', 'COACH')")
+    public List<LetterResponse> authoredByCurrentUser(@AuthenticationPrincipal User author) {
+        return letterRepository.findAllByAuthorIdOrderByCreatedAtDesc(author.getId()).stream()
+                .map(RecommendationLetterController::toResponse)
+                .toList();
+    }
+
     @GetMapping("/{letterId}")
     @PreAuthorize("hasAnyRole('STUDENT', 'MENTOR', 'COACH')")
     public LetterResponse get(@PathVariable UUID letterId, @AuthenticationPrincipal User user) {

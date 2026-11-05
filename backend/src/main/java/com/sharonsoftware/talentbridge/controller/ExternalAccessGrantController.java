@@ -11,10 +11,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +40,17 @@ public class ExternalAccessGrantController {
         this.grantRepository = grantRepository;
         this.submissionRepository = submissionRepository;
         this.userRepository = userRepository;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('COACH', 'MENTOR')")
+    public List<GrantResponse> activeGrants(@PathVariable UUID submissionId) {
+        if (!submissionRepository.existsById(submissionId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found");
+        }
+        return grantRepository.findActiveBySubmissionId(submissionId, Instant.now()).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @PostMapping
@@ -72,15 +85,24 @@ public class ExternalAccessGrantController {
         return toResponse(grantRepository.save(grant));
     }
 
-    private static GrantResponse toResponse(ExternalAccessGrant grant) {
+    private GrantResponse toResponse(ExternalAccessGrant grant) {
+        User externalMentor = userRepository.findById(grant.getExternalMentor().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "External mentor not found"));
         return new GrantResponse(
                 grant.getId(), grant.getSubmission().getId(), grant.getExternalMentor().getId(),
+                externalMentor.getFirstName() + " " + externalMentor.getLastName(),
                 grant.getExpiresAt(), grant.isRevoked());
     }
 
     public record GrantRequest(@NotNull UUID externalMentorId, @Future Instant expiresAt) {
     }
 
-    public record GrantResponse(UUID id, UUID submissionId, UUID externalMentorId, Instant expiresAt, boolean revoked) {
+    public record GrantResponse(
+            UUID id,
+            UUID submissionId,
+            UUID externalMentorId,
+            String externalMentorName,
+            Instant expiresAt,
+            boolean revoked) {
     }
 }

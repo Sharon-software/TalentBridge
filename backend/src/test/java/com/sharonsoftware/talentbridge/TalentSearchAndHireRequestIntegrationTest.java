@@ -170,6 +170,76 @@ class TalentSearchAndHireRequestIntegrationTest extends DatabaseIntegrationTest 
                 .andExpect(jsonPath("$[0].companyName").value("Northwind"));
     }
 
+    @Test
+    void coachesAndMentorsCanViewCohortRosterAndStudentProgress() throws Exception {
+        User coach = saveUser("coach-workspace@example.com", Role.COACH);
+        User externalMentor = saveUser("external-workspace@example.com", Role.EXTERNAL_MENTOR);
+        student.setFirstName("Asha");
+        secondStudent.setFirstName("Zara");
+        userRepository.save(student);
+        userRepository.save(secondStudent);
+
+        Cohort cohort = new Cohort();
+        cohort.setName("Workspace cohort " + UUID.randomUUID());
+        cohort.setStartDate(LocalDate.now().minusMonths(2));
+        cohort = cohortRepository.save(cohort);
+        studentProfile.setCohort(cohort);
+        studentProfileRepository.save(studentProfile);
+        StudentProfile secondProfile = studentProfileRepository.findByUserId(secondStudent.getId()).orElseThrow();
+        secondProfile.setCohort(cohort);
+        studentProfileRepository.save(secondProfile);
+
+        Assignment overdueAssignment = new Assignment();
+        overdueAssignment.setCohort(cohort);
+        overdueAssignment.setTitle("Overdue work");
+        overdueAssignment.setDueAt(Instant.now().minusSeconds(3600));
+        overdueAssignment = assignmentRepository.save(overdueAssignment);
+        Assignment upcomingAssignment = new Assignment();
+        upcomingAssignment.setCohort(cohort);
+        upcomingAssignment.setTitle("Upcoming work");
+        upcomingAssignment.setDueAt(Instant.now().plusSeconds(86400));
+        assignmentRepository.save(upcomingAssignment);
+
+        Submission completedLate = new Submission();
+        completedLate.setAssignment(overdueAssignment);
+        completedLate.setStudentProfile(secondProfile);
+        completedLate.setSubmittedAt(Instant.now());
+        completedLate.setStatus(SubmissionStatus.LATE);
+        submissionRepository.save(completedLate);
+
+        mockMvc.perform(get("/api/workspaces/cohorts")
+                        .header("Authorization", bearer(coach)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + cohort.getId() + "')].studentCount").value(org.hamcrest.Matchers.contains(2)))
+                .andExpect(jsonPath("$[?(@.id == '" + cohort.getId() + "')].assignmentCount").value(org.hamcrest.Matchers.contains(2)));
+
+        mockMvc.perform(get("/api/workspaces/cohorts/{cohortId}/students", cohort.getId())
+                        .header("Authorization", bearer(coach)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].firstName").value("Asha"))
+                .andExpect(jsonPath("$[0].fallingBehind").value(true))
+                .andExpect(jsonPath("$[1].firstName").value("Zara"))
+                .andExpect(jsonPath("$[1].fallingBehind").value(false))
+                .andExpect(jsonPath("$[1].onTimePercentage").value(0.0));
+
+        mockMvc.perform(get("/api/workspaces/students/{studentProfileId}", studentProfile.getId())
+                        .header("Authorization", bearer(mentor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.student.firstName").value("Asha"))
+                .andExpect(jsonPath("$.submissions[0].assignmentTitle").value("Portfolio review"))
+                .andExpect(jsonPath("$.scoreCards[0].score").value(92.0))
+                .andExpect(jsonPath("$.punctuality.totalSubmissions").value(1));
+
+        mockMvc.perform(get("/api/workspaces/external-mentors")
+                        .header("Authorization", bearer(coach)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(externalMentor.getId().toString()));
+
+        mockMvc.perform(get("/api/workspaces/cohorts/{cohortId}/students", cohort.getId())
+                        .header("Authorization", bearer(student)))
+                .andExpect(status().isForbidden());
+    }
+
     private StudentProfile createStudent(
             User user,
             LocalDate startDate,

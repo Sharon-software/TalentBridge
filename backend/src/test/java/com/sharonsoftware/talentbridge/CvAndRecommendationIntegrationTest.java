@@ -122,6 +122,11 @@ class CvAndRecommendationIntegrationTest extends DatabaseIntegrationTest {
                 .andReturn();
         String letterId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
 
+        mockMvc.perform(get("/api/recommendation-letters/authored")
+                        .header("Authorization", "Bearer " + data.mentorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("DRAFT"));
+
         mockMvc.perform(get("/api/recommendation-letters/mine")
                         .header("Authorization", "Bearer " + data.studentToken()))
                 .andExpect(status().isOk())

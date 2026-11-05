@@ -107,8 +107,14 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
                         .content(grantBody))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.revoked").value(false))
+                .andExpect(jsonPath("$.externalMentorName").value("Test EXTERNAL_MENTOR"))
                 .andReturn();
         JsonNode grant = objectMapper.readTree(grantResult.getResponse().getContentAsString());
+
+        mockMvc.perform(get("/api/submissions/{id}/external-access-grants", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + data.coachToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(grant.get("id").asText()));
 
         mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
@@ -126,6 +132,10 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
                         .header("Authorization", "Bearer " + data.coachToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revoked").value(true));
+        mockMvc.perform(get("/api/submissions/{id}/external-access-grants", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + data.coachToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
         mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
                 .andExpect(status().isForbidden());

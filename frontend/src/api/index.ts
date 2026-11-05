@@ -12,6 +12,7 @@ import type {
   CreateRecommendationLetterRequest,
   CvEntryRequest,
   CvEntryResponse,
+  ExternalMentorSummary,
   GrantRequest,
   GrantResponse,
   HireRequestResponse,
@@ -33,6 +34,9 @@ import type {
   TokenPair,
   UnreadCount,
   UpdateRecommendationLetterRequest,
+  WorkspaceCohortResponse,
+  WorkspaceStudentDetail,
+  WorkspaceStudentSummary,
   UUID,
 } from './types'
 
@@ -72,6 +76,16 @@ const adminApi = {
   deleteCohort: async (id: UUID) => apiClient.delete(`/api/admin/cohorts/${id}`),
 }
 
+const workspaceApi = {
+  cohorts: async () => (await apiClient.get<WorkspaceCohortResponse[]>('/api/workspaces/cohorts')).data,
+  students: async (cohortId: UUID) =>
+    (await apiClient.get<WorkspaceStudentSummary[]>(`/api/workspaces/cohorts/${cohortId}/students`)).data,
+  student: async (studentProfileId: UUID) =>
+    (await apiClient.get<WorkspaceStudentDetail>(`/api/workspaces/students/${studentProfileId}`)).data,
+  externalMentors: async () =>
+    (await apiClient.get<ExternalMentorSummary[]>('/api/workspaces/external-mentors')).data,
+}
+
 const assignmentApi = {
   list: async () => (await apiClient.get<AssignmentResponse[]>('/api/assignments')).data,
   get: async (id: UUID) => (await apiClient.get<AssignmentResponse>(`/api/assignments/${id}`)).data,
@@ -97,6 +111,8 @@ const submissionApi = {
 }
 
 const externalAccessApi = {
+  active: async (submissionId: UUID) =>
+    (await apiClient.get<GrantResponse[]>(`/api/submissions/${submissionId}/external-access-grants`)).data,
   grant: async (submissionId: UUID, request: GrantRequest) =>
     (await apiClient.post<GrantResponse>(`/api/submissions/${submissionId}/external-access-grants`, request)).data,
   revoke: async (submissionId: UUID, grantId: UUID) =>
@@ -113,6 +129,7 @@ const cvApi = {
 }
 
 const recommendationApi = {
+  authored: async () => (await apiClient.get<RecommendationLetterResponse[]>('/api/recommendation-letters/authored')).data,
   createDraft: async (request: CreateRecommendationLetterRequest) =>
     (await apiClient.post<RecommendationLetterResponse>('/api/recommendation-letters', request)).data,
   updateDraft: async (id: UUID, request: UpdateRecommendationLetterRequest) =>
@@ -151,6 +168,7 @@ const talentApi = {
 export const api = {
   auth: authApi,
   admin: adminApi,
+  workspace: workspaceApi,
   assignments: assignmentApi,
   submissions: submissionApi,
   externalAccess: externalAccessApi,

@@ -8,6 +8,7 @@ import { StudentCvPage } from './StudentCvPage'
 import { StudentDashboardPage } from './StudentDashboardPage'
 import { StudentMessagesPage } from './StudentMessagesPage'
 import { StudentRecommendationsPage } from './StudentRecommendationsPage'
+import { CoachMentorWorkspacePage } from './CoachMentorWorkspacePage'
 
 export function RoleDashboardPage() {
   const { user } = useAuth()
@@ -21,6 +22,9 @@ export function RoleDashboardPage() {
 
   const item = roleNavigation[routeRole].find((entry) => entry.section === section)
   if (!item) return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
+  if (routeRole === 'COACH' || routeRole === 'MENTOR') {
+    return <CoachMentorWorkspacePage section={section} />
+  }
   if (routeRole === 'STUDENT') {
     if (section === 'dashboard') return <StudentDashboardPage />
     if (section === 'assignments' || section === 'submissions') return <StudentAssignmentsPage />
