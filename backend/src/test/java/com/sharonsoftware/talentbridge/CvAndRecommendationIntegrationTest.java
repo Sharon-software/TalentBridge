@@ -73,10 +73,11 @@ class CvAndRecommendationIntegrationTest extends DatabaseIntegrationTest {
                         .header("Authorization", "Bearer " + data.studentToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"Engineer","organization":"Acme","description":"Built APIs","startDate":"2024-01-01","endDate":"2025-01-01"}
+                                {"title":"Engineer","category":"EXPERIENCE","organization":"Acme","description":"Built APIs","startDate":"2024-01-01","endDate":"2025-01-01"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Engineer"))
+                .andExpect(jsonPath("$.category").value("EXPERIENCE"))
                 .andReturn();
         JsonNode entry = objectMapper.readTree(created.getResponse().getContentAsString());
         String entryId = entry.get("id").asText();
@@ -98,7 +99,8 @@ class CvAndRecommendationIntegrationTest extends DatabaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Senior Engineer\",\"organization\":\"Acme\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Senior Engineer"));
+                .andExpect(jsonPath("$.title").value("Senior Engineer"))
+                .andExpect(jsonPath("$.category").value("EXPERIENCE"));
         mockMvc.perform(get("/api/cv").header("Authorization", "Bearer " + data.studentToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Senior Engineer"));

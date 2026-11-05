@@ -133,8 +133,11 @@ export interface GrantResponse {
   revoked: boolean
 }
 
+export type CvEntryCategory = 'EDUCATION' | 'EXPERIENCE' | 'SKILLS' | 'CERTIFICATION'
+
 export interface CvEntryRequest {
   title: string
+  category: CvEntryCategory
   organization?: string | null
   description?: string | null
   startDate?: ISODate | null
@@ -145,6 +148,7 @@ export interface CvEntryRequest {
 export interface CvEntryResponse {
   id: UUID
   title: string
+  category: CvEntryCategory
   organization: string | null
   description: string | null
   startDate: ISODate | null
@@ -187,6 +191,7 @@ export interface MessageThreadSummary {
   submissionId: UUID
   studentId: UUID
   externalMentorId: UUID
+  externalMentorName: string
   createdAt: ISODateTime
   unreadCount: number
 }

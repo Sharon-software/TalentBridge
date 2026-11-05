@@ -1,0 +1,6 @@
+ALTER TABLE cv_entries
+    ADD COLUMN category VARCHAR(32) NOT NULL DEFAULT 'EXPERIENCE';
+
+ALTER TABLE cv_entries
+    ADD CONSTRAINT chk_cv_entries_category
+    CHECK (category IN ('EDUCATION', 'EXPERIENCE', 'SKILLS', 'CERTIFICATION'));

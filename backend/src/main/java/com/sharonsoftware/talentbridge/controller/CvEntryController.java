@@ -1,6 +1,7 @@
 package com.sharonsoftware.talentbridge.controller;
 
 import com.sharonsoftware.talentbridge.domain.CvEntry;
+import com.sharonsoftware.talentbridge.domain.CvEntryCategory;
 import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.repository.CvEntryRepository;
@@ -93,6 +94,9 @@ public class CvEntryController {
 
     private static void apply(CvEntry entry, CvEntryRequest request) {
         entry.setTitle(request.title().trim());
+        if (request.category() != null) {
+            entry.setCategory(request.category());
+        }
         entry.setOrganization(request.organization() == null ? null : request.organization().trim());
         entry.setDescription(request.description());
         entry.setStartDate(request.startDate());
@@ -112,11 +116,12 @@ public class CvEntryController {
 
     private static CvEntryResponse toResponse(CvEntry entry) {
         return new CvEntryResponse(entry.getId(), entry.getTitle(), entry.getOrganization(),
-            entry.getDescription(), entry.getStartDate(), entry.getEndDate(), List.copyOf(entry.getSkills()));
+            entry.getDescription(), entry.getStartDate(), entry.getEndDate(), List.copyOf(entry.getSkills()), entry.getCategory());
     }
 
     public record CvEntryRequest(
             @NotBlank @Size(max = 200) String title,
+            CvEntryCategory category,
             @Size(max = 200) String organization,
             @Size(max = 10000) String description,
             LocalDate startDate,
@@ -131,6 +136,7 @@ public class CvEntryController {
             String description,
             LocalDate startDate,
             LocalDate endDate,
-            List<String> skills) {
+            List<String> skills,
+            CvEntryCategory category) {
     }
 }

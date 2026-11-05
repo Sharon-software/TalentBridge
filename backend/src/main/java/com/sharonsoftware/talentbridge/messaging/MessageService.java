@@ -165,9 +165,12 @@ public class MessageService {
 
     private ThreadSummary toThreadSummary(MessageThread thread, UUID userId) {
         long unread = messageRepository.countByThreadIdAndRecipientIdAndReadAtIsNull(thread.getId(), userId);
+        User externalMentor = findUser(thread.getExternalMentor().getId());
         return new ThreadSummary(
                 thread.getId(), thread.getSubmission().getId(), thread.getStudent().getId(),
-                thread.getExternalMentor().getId(), thread.getCreatedAt(), unread);
+            thread.getExternalMentor().getId(),
+            externalMentor.getFirstName() + " " + externalMentor.getLastName(),
+            thread.getCreatedAt(), unread);
     }
 
     private User findUser(UUID userId) {
@@ -190,6 +193,7 @@ public class MessageService {
             UUID submissionId,
             UUID studentId,
             UUID externalMentorId,
+            String externalMentorName,
             Instant createdAt,
             long unreadCount) {
     }
