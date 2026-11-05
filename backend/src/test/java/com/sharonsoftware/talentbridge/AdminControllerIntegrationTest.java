@@ -12,8 +12,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
+import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
+import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import com.sharonsoftware.talentbridge.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +46,9 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
     @Autowired
     private CohortRepository cohortRepository;
 
+        @Autowired
+        private StudentProfileRepository studentProfileRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -52,6 +57,7 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
 
     @BeforeEach
     void clearData() {
+                studentProfileRepository.deleteAll();
         cohortRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -126,6 +132,48 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
                 .andExpect(status().isNoContent());
     }
 
+    @Test
+    void adminCanAssignMoveAndRemoveStudentsFromCohorts() throws Exception {
+        String adminToken = createToken("cohort-admin@example.com", Role.ADMIN);
+        MvcResult studentResult = mockMvc.perform(post("/api/admin/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"cohort-student@example.com","password":"student-password","firstName":"Sasha","lastName":"Student","role":"STUDENT"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        User student = userRepository.findByEmail("cohort-student@example.com").orElseThrow();
+        StudentProfile profile = studentProfileRepository.findByUserId(student.getId()).orElseThrow();
+
+        String firstCohortId = createCohort(adminToken, "First cohort");
+        String secondCohortId = createCohort(adminToken, "Second cohort");
+
+        mockMvc.perform(get("/api/admin/students").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].studentProfileId").value(profile.getId().toString()))
+                .andExpect(jsonPath("$[0].cohortId").doesNotExist());
+
+        mockMvc.perform(put("/api/admin/cohorts/{cohortId}/students/{studentProfileId}", firstCohortId, profile.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cohortId").value(firstCohortId))
+                .andExpect(jsonPath("$.cohortName").value("First cohort"));
+
+        mockMvc.perform(put("/api/admin/cohorts/{cohortId}/students/{studentProfileId}", secondCohortId, profile.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cohortId").value(secondCohortId))
+                .andExpect(jsonPath("$.cohortName").value("Second cohort"));
+
+        mockMvc.perform(delete("/api/admin/cohorts/{cohortId}/students/{studentProfileId}", secondCohortId, profile.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/admin/students").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].cohortId").doesNotExist());
+    }
+
         @Test
         void adminCanReadPlatformStatsByRoleAndDomainTotals() throws Exception {
                 String adminToken = createToken("stats-admin@example.com", Role.ADMIN);
@@ -178,4 +226,14 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
         user.setRole(role);
         return jwtService.issueTokenPair(userRepository.save(user)).accessToken();
     }
+
+        private String createCohort(String adminToken, String name) throws Exception {
+                MvcResult result = mockMvc.perform(post("/api/admin/cohorts")
+                                                .header("Authorization", "Bearer " + adminToken)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(java.util.Map.of("name", name))))
+                                .andExpect(status().isCreated())
+                                .andReturn();
+                return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        }
 }

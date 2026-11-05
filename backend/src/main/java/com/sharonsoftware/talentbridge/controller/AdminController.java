@@ -130,6 +130,42 @@ public class AdminController {
         return cohortRepository.findAll().stream().map(AdminController::toResponse).toList();
     }
 
+    @GetMapping("/students")
+    public List<StudentAssignmentResponse> listStudents() {
+        return studentProfileRepository.findAllWithUserAndCohortByUserRole(Role.STUDENT).stream()
+                .map(AdminController::toStudentAssignmentResponse)
+                .toList();
+    }
+
+    @PutMapping("/cohorts/{cohortId}/students/{studentProfileId}")
+    @Transactional
+    public StudentAssignmentResponse assignStudent(
+            @PathVariable UUID cohortId,
+            @PathVariable UUID studentProfileId) {
+        Cohort cohort = findCohort(cohortId);
+        StudentProfile profile = studentProfileRepository.findById(studentProfileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student profile not found"));
+        if (profile.getUser().getRole() != Role.STUDENT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile does not belong to a student");
+        }
+        profile.setCohort(cohort);
+        return toStudentAssignmentResponse(studentProfileRepository.save(profile));
+    }
+
+    @DeleteMapping("/cohorts/{cohortId}/students/{studentProfileId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void removeStudent(@PathVariable UUID cohortId, @PathVariable UUID studentProfileId) {
+        Cohort cohort = findCohort(cohortId);
+        StudentProfile profile = studentProfileRepository.findById(studentProfileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student profile not found"));
+        if (profile.getCohort() == null || !profile.getCohort().getId().equals(cohort.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Student is not assigned to this cohort");
+        }
+        profile.setCohort(null);
+        studentProfileRepository.save(profile);
+    }
+
     @GetMapping("/cohorts/{id}")
     public CohortResponse getCohort(@PathVariable UUID id) {
         return toResponse(findCohort(id));
@@ -236,6 +272,14 @@ public class AdminController {
         return new CohortResponse(cohort.getId(), cohort.getName(), cohort.getStartDate(), cohort.getEndDate());
     }
 
+    private static StudentAssignmentResponse toStudentAssignmentResponse(StudentProfile profile) {
+        Cohort cohort = profile.getCohort();
+        User student = profile.getUser();
+        return new StudentAssignmentResponse(
+                profile.getId(), student.getId(), student.getFirstName(), student.getLastName(), student.getEmail(),
+                cohort == null ? null : cohort.getId(), cohort == null ? null : cohort.getName());
+    }
+
     public record CreateUserRequest(
             @NotBlank @Email @Size(max = 320) String email,
             @NotBlank @Size(min = 8, max = 72) String password,
@@ -258,6 +302,16 @@ public class AdminController {
 
     public record CohortResponse(UUID id, String name, LocalDate startDate, LocalDate endDate) {
     }
+
+        public record StudentAssignmentResponse(
+            UUID studentProfileId,
+            UUID userId,
+            String firstName,
+            String lastName,
+            String email,
+            UUID cohortId,
+            String cohortName) {
+        }
 
     public record ExternalTutorAssignmentResponse(
             UUID cohortId,

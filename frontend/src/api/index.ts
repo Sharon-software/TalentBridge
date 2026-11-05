@@ -2,6 +2,7 @@ import { apiClient, clearTokens, getRefreshToken, saveTokenResponse } from './cl
 import type {
   AdminCreateUserRequest,
   AdminPlatformStats,
+  AdminStudentProfileResponse,
   AdminUserResponse,
   AssignRoleRequest,
   AssignmentResponse,
@@ -78,11 +79,16 @@ const adminApi = {
   assignRole: async (userId: UUID, request: AssignRoleRequest) =>
     (await apiClient.patch<AdminUserResponse>(`/api/admin/users/${userId}/role`, request)).data,
   cohorts: async () => (await apiClient.get<CohortResponse[]>('/api/admin/cohorts')).data,
+  students: async () => (await apiClient.get<AdminStudentProfileResponse[]>('/api/admin/students')).data,
   createCohort: async (request: CohortRequest) =>
     (await apiClient.post<CohortResponse>('/api/admin/cohorts', request)).data,
   updateCohort: async (id: UUID, request: CohortRequest) =>
     (await apiClient.put<CohortResponse>(`/api/admin/cohorts/${id}`, request)).data,
   deleteCohort: async (id: UUID) => apiClient.delete(`/api/admin/cohorts/${id}`),
+  assignStudent: async (cohortId: UUID, studentProfileId: UUID) =>
+    (await apiClient.put<AdminStudentProfileResponse>(`/api/admin/cohorts/${cohortId}/students/${studentProfileId}`)).data,
+  removeStudent: async (cohortId: UUID, studentProfileId: UUID) =>
+    apiClient.delete(`/api/admin/cohorts/${cohortId}/students/${studentProfileId}`),
   externalTutors: async (cohortId: UUID) =>
     (await apiClient.get<ExternalTutorAssignmentResponse[]>(`/api/admin/cohorts/${cohortId}/external-tutors`)).data,
   assignExternalTutor: async (cohortId: UUID, tutorId: UUID) =>

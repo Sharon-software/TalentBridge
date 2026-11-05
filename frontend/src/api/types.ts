@@ -86,6 +86,16 @@ export interface CohortResponse {
   endDate: ISODate | null
 }
 
+export interface AdminStudentProfileResponse {
+  studentProfileId: UUID
+  userId: UUID
+  firstName: string
+  lastName: string
+  email: string
+  cohortId: UUID | null
+  cohortName: string | null
+}
+
 export interface WorkspaceCohortResponse extends CohortResponse {
   studentCount: number
   assignmentCount: number

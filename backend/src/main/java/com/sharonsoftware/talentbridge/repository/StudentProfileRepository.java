@@ -1,6 +1,7 @@
 package com.sharonsoftware.talentbridge.repository;
 
 import com.sharonsoftware.talentbridge.domain.StudentProfile;
+import com.sharonsoftware.talentbridge.domain.Role;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +27,9 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile, 
 
     @EntityGraph(attributePaths = "user")
     List<StudentProfile> findAllByCohortId(UUID cohortId);
+
+    @Query("select profile from StudentProfile profile join fetch profile.user user left join fetch profile.cohort where user.role = :role order by user.lastName, user.firstName")
+    List<StudentProfile> findAllWithUserAndCohortByUserRole(@Param("role") Role role);
 
     long countByCohortId(UUID cohortId);
 
