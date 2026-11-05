@@ -8,6 +8,7 @@ import com.sharonsoftware.talentbridge.domain.ScoreCard;
 import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.repository.ExternalAccessGrantRepository;
+import com.sharonsoftware.talentbridge.repository.ExternalTutorAssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.ScoreCardRepository;
 import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
 import com.sharonsoftware.talentbridge.repository.SubmissionRepository;
@@ -48,6 +49,7 @@ public class SubmissionController {
     private final SubmissionRepository submissionRepository;
     private final ScoreCardRepository scoreCardRepository;
     private final ExternalAccessGrantRepository externalAccessGrantRepository;
+    private final ExternalTutorAssignmentRepository externalTutorAssignmentRepository;
     private final com.sharonsoftware.talentbridge.storage.FileStorage fileStorage;
 
     public SubmissionController(
@@ -56,12 +58,14 @@ public class SubmissionController {
             SubmissionRepository submissionRepository,
             ScoreCardRepository scoreCardRepository,
             ExternalAccessGrantRepository externalAccessGrantRepository,
+            ExternalTutorAssignmentRepository externalTutorAssignmentRepository,
             com.sharonsoftware.talentbridge.storage.FileStorage fileStorage) {
         this.submissionService = submissionService;
         this.studentProfileRepository = studentProfileRepository;
         this.submissionRepository = submissionRepository;
         this.scoreCardRepository = scoreCardRepository;
         this.externalAccessGrantRepository = externalAccessGrantRepository;
+        this.externalTutorAssignmentRepository = externalTutorAssignmentRepository;
         this.fileStorage = fileStorage;
     }
 
@@ -99,7 +103,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/{submissionId}/analysis")
-    @PreAuthorize("hasAnyRole('STUDENT', 'COACH', 'ADMIN', 'MENTOR', 'EXTERNAL_MENTOR')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'COACH', 'ADMIN', 'MENTOR', 'EXTERNAL_MENTOR', 'EXTERNAL_TUTOR')")
     public AnalysisResponse analysis(@PathVariable UUID submissionId, @AuthenticationPrincipal User user) {
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
@@ -113,7 +117,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/{submissionId}/file")
-    @PreAuthorize("hasAnyRole('STUDENT', 'COACH', 'ADMIN', 'MENTOR', 'EXTERNAL_MENTOR')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'COACH', 'ADMIN', 'MENTOR', 'EXTERNAL_MENTOR', 'EXTERNAL_TUTOR')")
     public ResponseEntity<InputStreamResource> downloadSubmission(
             @PathVariable UUID submissionId,
             @AuthenticationPrincipal User user) throws IOException {
@@ -145,6 +149,12 @@ public class SubmissionController {
         } else if (user.getRole() == Role.EXTERNAL_MENTOR
                 && !externalAccessGrantRepository.hasActiveGrant(submission.getId(), user.getId(), Instant.now())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No active grant for this submission");
+        } else if (user.getRole() == Role.EXTERNAL_TUTOR) {
+            UUID cohortId = submissionRepository.findCohortIdById(submission.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+            if (!externalTutorAssignmentRepository.existsByCohortIdAndExternalTutorId(cohortId, user.getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This cohort is not assigned to the external tutor");
+            }
         }
     }
 

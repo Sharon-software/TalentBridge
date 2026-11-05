@@ -14,6 +14,7 @@ abstract class DatabaseIntegrationTest {
         jdbcTemplate.execute("DELETE FROM messages");
         jdbcTemplate.execute("DELETE FROM message_threads");
         jdbcTemplate.execute("DELETE FROM external_access_grants");
+        jdbcTemplate.execute("DELETE FROM submission_reviews");
         jdbcTemplate.execute("DELETE FROM score_cards");
         jdbcTemplate.execute("DELETE FROM submissions");
         jdbcTemplate.execute("DELETE FROM qualifications");
@@ -23,6 +24,7 @@ abstract class DatabaseIntegrationTest {
         jdbcTemplate.execute("DELETE FROM hire_requests");
         jdbcTemplate.execute("DELETE FROM assignments");
         jdbcTemplate.execute("DELETE FROM student_profiles");
+        jdbcTemplate.execute("DELETE FROM cohort_external_tutors");
         jdbcTemplate.execute("DELETE FROM cohorts");
         jdbcTemplate.execute("DELETE FROM users");
     }

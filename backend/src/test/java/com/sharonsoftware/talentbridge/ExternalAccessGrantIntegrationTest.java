@@ -3,6 +3,7 @@ package com.sharonsoftware.talentbridge;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -111,10 +112,24 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
                 .andReturn();
         JsonNode grant = objectMapper.readTree(grantResult.getResponse().getContentAsString());
 
+        mockMvc.perform(get("/api/external-mentor/submissions")
+                        .header("Authorization", "Bearer " + data.externalMentorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].submissionId").value(data.firstSubmissionId().toString()))
+                .andExpect(jsonPath("$[0].expiresAt").doesNotExist());
+
         mockMvc.perform(get("/api/submissions/{id}/external-access-grants", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.coachToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(grant.get("id").asText()));
+
+        mockMvc.perform(put("/api/submissions/{id}/review", data.firstSubmissionId())
+                        .header("Authorization", "Bearer " + data.externalMentorToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":5,\"comments\":\"Strong structure and clear reasoning.\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rating").value(5))
+                .andExpect(jsonPath("$.authorName").value("Test EXTERNAL_MENTOR"));
 
         mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
@@ -125,6 +140,11 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/submissions/{id}/analysis", data.secondSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/submissions/{id}/review", data.secondSubmissionId())
+                        .header("Authorization", "Bearer " + data.externalMentorToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":4,\"comments\":\"Not shared\"}"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(delete("/api/submissions/{id}/external-access-grants/{grantId}",
@@ -139,6 +159,10 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
         mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/external-mentor/submissions")
+                        .header("Authorization", "Bearer " + data.externalMentorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
@@ -155,6 +179,10 @@ class ExternalAccessGrantIntegrationTest extends DatabaseIntegrationTest {
         mockMvc.perform(get("/api/submissions/{id}/file", data.firstSubmissionId())
                         .header("Authorization", "Bearer " + data.externalMentorToken()))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/external-mentor/submissions")
+                        .header("Authorization", "Bearer " + data.externalMentorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     private TestData createTestData() throws Exception {

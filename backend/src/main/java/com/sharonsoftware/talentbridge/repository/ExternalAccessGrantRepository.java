@@ -20,6 +20,18 @@ public interface ExternalAccessGrantRepository extends JpaRepository<ExternalAcc
 	    @Param("submissionId") UUID submissionId,
 	    @Param("now") Instant now);
 
+    @Query("select distinct accessGrant from ExternalAccessGrant accessGrant "
+	    + "join fetch accessGrant.submission submission "
+	    + "join fetch submission.assignment "
+	    + "join fetch submission.studentProfile profile "
+	    + "join fetch profile.user "
+	    + "where accessGrant.externalMentor.id = :mentorId "
+	    + "and accessGrant.revoked = false "
+	    + "and (accessGrant.expiresAt is null or accessGrant.expiresAt > :now)")
+    List<ExternalAccessGrant> findActiveByExternalMentorId(
+	    @Param("mentorId") UUID mentorId,
+	    @Param("now") Instant now);
+
     @Query("select case when count(accessGrant) > 0 then true else false end "
 	    + "from ExternalAccessGrant accessGrant "
 	    + "where accessGrant.submission.id = :submissionId "

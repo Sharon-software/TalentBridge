@@ -4,6 +4,7 @@ import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
+import com.sharonsoftware.talentbridge.repository.ExternalTutorAssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,14 +39,17 @@ public class AdminController {
     private final UserRepository userRepository;
     private final CohortRepository cohortRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ExternalTutorAssignmentRepository externalTutorAssignmentRepository;
 
     public AdminController(
             UserRepository userRepository,
             CohortRepository cohortRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            ExternalTutorAssignmentRepository externalTutorAssignmentRepository) {
         this.userRepository = userRepository;
         this.cohortRepository = cohortRepository;
         this.passwordEncoder = passwordEncoder;
+        this.externalTutorAssignmentRepository = externalTutorAssignmentRepository;
     }
 
     @GetMapping("/users")
@@ -84,6 +89,48 @@ public class AdminController {
     @GetMapping("/cohorts/{id}")
     public CohortResponse getCohort(@PathVariable UUID id) {
         return toResponse(findCohort(id));
+    }
+
+    @GetMapping("/cohorts/{id}/external-tutors")
+    public List<ExternalTutorAssignmentResponse> externalTutors(@PathVariable UUID id) {
+        findCohort(id);
+        return externalTutorAssignmentRepository.findAllByCohortIdOrderByExternalTutorLastNameAsc(id).stream()
+                .map(assignment -> new ExternalTutorAssignmentResponse(
+                        id,
+                        assignment.getExternalTutor().getId(),
+                        assignment.getExternalTutor().getFirstName(),
+                        assignment.getExternalTutor().getLastName(),
+                        assignment.getExternalTutor().getEmail()))
+                .toList();
+    }
+
+    @PutMapping("/cohorts/{id}/external-tutors/{tutorId}")
+    public ExternalTutorAssignmentResponse assignExternalTutor(
+            @PathVariable UUID id,
+            @PathVariable UUID tutorId) {
+        Cohort cohort = findCohort(id);
+        User tutor = userRepository.findById(tutorId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "External tutor not found"));
+        if (tutor.getRole() != Role.EXTERNAL_TUTOR) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not an external tutor");
+        }
+        var assignment = externalTutorAssignmentRepository.findByCohortIdAndExternalTutorId(id, tutorId)
+                .orElseGet(() -> {
+                    var newAssignment = new com.sharonsoftware.talentbridge.domain.ExternalTutorAssignment();
+                    newAssignment.setCohort(cohort);
+                    newAssignment.setExternalTutor(tutor);
+                    return externalTutorAssignmentRepository.save(newAssignment);
+                });
+        return new ExternalTutorAssignmentResponse(
+                cohort.getId(), tutor.getId(), tutor.getFirstName(), tutor.getLastName(), tutor.getEmail());
+    }
+
+    @DeleteMapping("/cohorts/{id}/external-tutors/{tutorId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void removeExternalTutor(@PathVariable UUID id, @PathVariable UUID tutorId) {
+        findCohort(id);
+        externalTutorAssignmentRepository.deleteByCohortIdAndExternalTutorId(id, tutorId);
     }
 
     @PostMapping("/cohorts")
@@ -166,5 +213,13 @@ public class AdminController {
     }
 
     public record CohortResponse(UUID id, String name, LocalDate startDate, LocalDate endDate) {
+    }
+
+    public record ExternalTutorAssignmentResponse(
+            UUID cohortId,
+            UUID externalTutorId,
+            String firstName,
+            String lastName,
+            String email) {
     }
 }

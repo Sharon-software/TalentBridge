@@ -128,6 +128,65 @@ export interface ExternalMentorSummary {
   email: string
 }
 
+export interface ExternalTutorAssignmentResponse {
+  cohortId: UUID
+  externalTutorId: UUID
+  firstName: string
+  lastName: string
+  email: string
+}
+
+export interface ExternalTutorCohortResponse extends CohortResponse {
+  studentCount: number
+  assignmentCount: number
+  assignedAt: ISODateTime
+}
+
+export interface ExternalTutorSubmissionResponse {
+  id: UUID
+  assignmentId: UUID
+  assignmentTitle: string
+  studentId: UUID
+  studentFirstName: string
+  studentLastName: string
+  filename: string | null
+  submittedAt: ISODateTime
+  status: SubmissionStatus
+  analysisStatus: AnalysisStatus | null
+  score: number | null
+}
+
+export interface ExternalMentorSubmissionResponse {
+  submissionId: UUID
+  assignmentId: UUID
+  assignmentTitle: string
+  studentId: UUID
+  studentFirstName: string
+  studentLastName: string
+  filename: string | null
+  submittedAt: ISODateTime
+  status: SubmissionStatus
+  expiresAt: ISODateTime | null
+  analysisStatus: AnalysisStatus | null
+  score: number | null
+}
+
+export interface SubmissionReviewRequest {
+  rating: number
+  comments: string
+}
+
+export interface SubmissionReviewResponse {
+  id: UUID
+  submissionId: UUID
+  authorId: UUID
+  authorName: string
+  rating: number
+  comments: string
+  createdAt: ISODateTime
+  updatedAt: ISODateTime
+}
+
 export interface CreateAssignmentRequest {
   cohortId: UUID
   title: string
@@ -251,6 +310,7 @@ export interface MessageThreadSummary {
   studentId: UUID
   externalMentorId: UUID
   externalMentorName: string
+  participantName: string
   createdAt: ISODateTime
   unreadCount: number
 }

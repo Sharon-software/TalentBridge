@@ -89,6 +89,25 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
                 .andReturn();
         String cohortId = objectMapper.readTree(cohortResult.getResponse().getContentAsString()).get("id").asText();
 
+        MvcResult tutorResult = mockMvc.perform(post("/api/admin/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"external-tutor@example.com","password":"tutor-password","firstName":"Tara","lastName":"Tutor","role":"EXTERNAL_TUTOR"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("EXTERNAL_TUTOR"))
+                .andReturn();
+        String tutorId = objectMapper.readTree(tutorResult.getResponse().getContentAsString()).get("id").asText();
+        mockMvc.perform(put("/api/admin/cohorts/{cohortId}/external-tutors/{tutorId}", cohortId, tutorId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("external-tutor@example.com"));
+        mockMvc.perform(get("/api/admin/cohorts/{cohortId}/external-tutors", cohortId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].externalTutorId").value(tutorId));
+
         mockMvc.perform(get("/api/admin/cohorts").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Spring 2026"));
@@ -98,6 +117,9 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
                         .content("{\"name\":\"Autumn 2026\",\"startDate\":\"2026-08-01\",\"endDate\":\"2026-12-01\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Autumn 2026"));
+        mockMvc.perform(delete("/api/admin/cohorts/{cohortId}/external-tutors/{tutorId}", cohortId, tutorId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
         mockMvc.perform(delete("/api/admin/cohorts/{id}", cohortId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNoContent());

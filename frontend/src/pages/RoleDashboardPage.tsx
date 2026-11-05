@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { isAppRole, roleForSlug, roleLabels, roleNavigation, roleSlugs } from '../auth/roles'
 import { useAuth } from '../auth/AuthContext'
@@ -9,6 +10,16 @@ import { StudentDashboardPage } from './StudentDashboardPage'
 import { StudentMessagesPage } from './StudentMessagesPage'
 import { StudentRecommendationsPage } from './StudentRecommendationsPage'
 import { CoachMentorWorkspacePage } from './CoachMentorWorkspacePage'
+import { Skeleton } from '../components/ui'
+
+const ExternalTutorDashboardPage = lazy(async () => {
+  const module = await import('./ExternalTutorDashboardPage')
+  return { default: module.ExternalTutorDashboardPage }
+})
+const ExternalMentorDashboardPage = lazy(async () => {
+  const module = await import('./ExternalMentorDashboardPage')
+  return { default: module.ExternalMentorDashboardPage }
+})
 
 export function RoleDashboardPage() {
   const { user } = useAuth()
@@ -24,6 +35,13 @@ export function RoleDashboardPage() {
   if (!item) return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
   if (routeRole === 'COACH' || routeRole === 'MENTOR') {
     return <CoachMentorWorkspacePage section={section} />
+  }
+  if (routeRole === 'EXTERNAL_TUTOR' && (section === 'dashboard' || section === 'submissions')) {
+    return <Suspense fallback={<Skeleton rows={5} />}><ExternalTutorDashboardPage /></Suspense>
+  }
+  if (routeRole === 'EXTERNAL_MENTOR') {
+    if (section === 'dashboard' || section === 'submissions') return <Suspense fallback={<Skeleton rows={5} />}><ExternalMentorDashboardPage /></Suspense>
+    if (section === 'messages') return <StudentMessagesPage />
   }
   if (routeRole === 'STUDENT') {
     if (section === 'dashboard') return <StudentDashboardPage />

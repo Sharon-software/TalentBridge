@@ -12,7 +12,11 @@ import type {
   CreateRecommendationLetterRequest,
   CvEntryRequest,
   CvEntryResponse,
+  ExternalMentorSubmissionResponse,
   ExternalMentorSummary,
+  ExternalTutorAssignmentResponse,
+  ExternalTutorCohortResponse,
+  ExternalTutorSubmissionResponse,
   GrantRequest,
   GrantResponse,
   HireRequestResponse,
@@ -28,6 +32,8 @@ import type {
   StudentDetail,
   StudentPage,
   SubmissionAnalysisResponse,
+  SubmissionReviewRequest,
+  SubmissionReviewResponse,
   SubmissionResponse,
   TalentSearchParams,
   ThreadMessages,
@@ -74,6 +80,12 @@ const adminApi = {
   updateCohort: async (id: UUID, request: CohortRequest) =>
     (await apiClient.put<CohortResponse>(`/api/admin/cohorts/${id}`, request)).data,
   deleteCohort: async (id: UUID) => apiClient.delete(`/api/admin/cohorts/${id}`),
+  externalTutors: async (cohortId: UUID) =>
+    (await apiClient.get<ExternalTutorAssignmentResponse[]>(`/api/admin/cohorts/${cohortId}/external-tutors`)).data,
+  assignExternalTutor: async (cohortId: UUID, tutorId: UUID) =>
+    (await apiClient.put<ExternalTutorAssignmentResponse>(`/api/admin/cohorts/${cohortId}/external-tutors/${tutorId}`)).data,
+  removeExternalTutor: async (cohortId: UUID, tutorId: UUID) =>
+    apiClient.delete(`/api/admin/cohorts/${cohortId}/external-tutors/${tutorId}`),
 }
 
 const workspaceApi = {
@@ -106,8 +118,24 @@ const submissionApi = {
     (await apiClient.get<PunctualityResponse>('/api/submissions/students/punctuality', { params: { studentProfileId } })).data,
   analysis: async (submissionId: UUID) =>
     (await apiClient.get<SubmissionAnalysisResponse>(`/api/submissions/${submissionId}/analysis`)).data,
+  review: async (submissionId: UUID) => {
+    const { data } = await apiClient.get<SubmissionReviewResponse | null>(`/api/submissions/${submissionId}/review`)
+    return data || null
+  },
+  updateReview: async (submissionId: UUID, request: SubmissionReviewRequest) =>
+    (await apiClient.put<SubmissionReviewResponse>(`/api/submissions/${submissionId}/review`, request)).data,
   file: async (submissionId: UUID) =>
     (await apiClient.get<Blob>(`/api/submissions/${submissionId}/file`, { responseType: 'blob' })).data,
+}
+
+const externalTutorApi = {
+  cohorts: async () => (await apiClient.get<ExternalTutorCohortResponse[]>('/api/external-tutor/cohorts')).data,
+  submissions: async (cohortId: UUID) =>
+    (await apiClient.get<ExternalTutorSubmissionResponse[]>(`/api/external-tutor/cohorts/${cohortId}/submissions`)).data,
+}
+
+const externalMentorApi = {
+  submissions: async () => (await apiClient.get<ExternalMentorSubmissionResponse[]>('/api/external-mentor/submissions')).data,
 }
 
 const externalAccessApi = {
@@ -171,6 +199,8 @@ export const api = {
   workspace: workspaceApi,
   assignments: assignmentApi,
   submissions: submissionApi,
+  externalTutor: externalTutorApi,
+  externalMentor: externalMentorApi,
   externalAccess: externalAccessApi,
   cv: cvApi,
   recommendationLetters: recommendationApi,

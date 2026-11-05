@@ -71,7 +71,6 @@ export const roleNavigation: Record<AppRole, NavigationItem[]> = {
   EXTERNAL_TUTOR: [
     overview,
     { label: 'Shared work', section: 'submissions', icon: BookOpenCheck },
-    { label: 'Messages', section: 'messages', icon: MessageSquareText },
   ],
   EXTERNAL_MENTOR: [
     overview,

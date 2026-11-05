@@ -1,6 +1,6 @@
 # TalentBridge Backend
 
-Spring Boot 3 backend using Java 21, Maven, PostgreSQL, Spring Data JPA, and Flyway. The initial domain schema and repositories are in place; application controllers have not been added.
+Spring Boot 3 backend using Java 21, Maven, PostgreSQL, Spring Data JPA, Flyway, and JWT authentication.
 
 ## Requirements
 
@@ -43,7 +43,15 @@ Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 min
 - `GET /api/submissions/mine` lists the current student's submissions, and `GET /api/submissions/me/punctuality` returns their on-time percentage.
 - `GET /api/submissions/students/punctuality?studentProfileId={id}` returns a student's punctuality summary for coaches and admins.
 - `POST /api/submissions/{submissionId}/external-access-grants` grants an external mentor access; only coaches and mentors can grant, and `expiresAt` is optional.
-- `DELETE /api/submissions/{submissionId}/external-access-grants/{grantId}` revokes a grant. External mentors can download the file or view the analysis only while a matching grant is active and unexpired.
+- `GET /api/submissions/{submissionId}/external-access-grants` lists active grants; `DELETE /api/submissions/{submissionId}/external-access-grants/{grantId}` revokes a grant.
+- External mentors list only active shares with `GET /api/external-mentor/submissions`. File, analysis, review, and chat APIs reject unshared, revoked, or expired submissions with `403`.
+
+## External Tutor and Mentor Workspaces
+
+- Admins assign tutors with `PUT /api/admin/cohorts/{cohortId}/external-tutors/{tutorId}`, list assignments with `GET /api/admin/cohorts/{cohortId}/external-tutors`, and remove assignments with `DELETE` on the same tutor path.
+- External tutors list assigned cohorts with `GET /api/external-tutor/cohorts` and submissions with `GET /api/external-tutor/cohorts/{cohortId}/submissions`. Access is limited to assigned cohorts.
+- External tutors and external mentors save a 1-5 rating and comments with `PUT /api/submissions/{submissionId}/review`, for example `{"rating":4,"comments":"Clear approach; add more test coverage."}`. Tutors must be assigned to the submission's cohort; mentors need an active grant. Unshared work returns `403`.
+- External mentors list active grants with `GET /api/external-mentor/submissions`; expired and revoked grants are omitted. Private messages use the `/api/messages` and authenticated `/ws` STOMP endpoints described below.
 
 ## Messaging
 

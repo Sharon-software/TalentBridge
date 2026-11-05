@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Client, type IMessage } from '@stomp/stompjs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { LoaderCircle, MessageSquareText, RefreshCw, Send } from 'lucide-react'
 import { api } from '../api'
 import type { MessageThreadSummary, MessageView, ThreadMessages } from '../api/types'
@@ -32,6 +33,7 @@ function messagesKey(threadId: string | undefined) {
 export function StudentMessagesPage() {
   const { user, token } = useAuth()
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
   const [messageText, setMessageText] = useState('')
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting')
@@ -44,7 +46,12 @@ export function StudentMessagesPage() {
     enabled: Boolean(user),
   })
   const threads = threadsQuery.data ?? []
-  const selectedThread = threads.find((thread) => thread.id === selectedThreadId) ?? threads[0] ?? null
+  const requestedThreadId = searchParams.get('thread')
+  const selectedThread = threads.find((thread) => thread.id === selectedThreadId)
+    ?? threads.find((thread) => thread.id === requestedThreadId)
+    ?? threads[0]
+    ?? null
+  const isExternalMentor = user?.role === 'EXTERNAL_MENTOR'
   const activeThreadId = selectedThread?.id
   const userId = user?.id
   const visibleConnectionState: ConnectionState = token ? connectionState : 'failed'
@@ -137,7 +144,7 @@ export function StudentMessagesPage() {
   if (threadsQuery.isError) {
     return (
       <div className="space-y-5">
-        <PageHeading unreadCount={unreadQuery.data?.unreadCount ?? 0} />
+        <PageHeading unreadCount={unreadQuery.data?.unreadCount ?? 0} isExternalMentor={isExternalMentor} />
         <section role="alert" className="flex items-center justify-between gap-4 rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
           <span>Conversations could not be loaded.</span>
           <button type="button" onClick={() => void threadsQuery.refetch()} className="inline-flex shrink-0 items-center gap-2 font-medium"><RefreshCw size={15} /> Retry</button>
@@ -148,13 +155,13 @@ export function StudentMessagesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeading unreadCount={unreadQuery.data?.unreadCount ?? 0} />
+      <PageHeading unreadCount={unreadQuery.data?.unreadCount ?? 0} isExternalMentor={isExternalMentor} />
       {threads.length === 0 ? (
-        <EmptyState title="No active mentor conversations" description="Conversations appear here when an external mentor has an active access grant for one of your submissions." />
+        <EmptyState title="No active conversations" description={isExternalMentor ? 'Private conversations appear when a student messages you about an active grant.' : 'Conversations appear here when an external mentor has an active access grant for one of your submissions.'} />
       ) : (
         <section className="grid min-h-[32rem] overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[17rem_minmax(0,1fr)]">
           <aside aria-label="Conversations" className="border-b border-slate-200 dark:border-slate-800 lg:border-b-0 lg:border-r">
-            <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4 dark:border-slate-800"><h2 className="text-sm font-semibold text-slate-900 dark:text-white">Mentors</h2><ConnectionBadge state={visibleConnectionState} /></div>
+            <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4 dark:border-slate-800"><h2 className="text-sm font-semibold text-slate-900 dark:text-white">{isExternalMentor ? 'Students' : 'Mentors'}</h2><ConnectionBadge state={visibleConnectionState} /></div>
             <ul className="max-h-64 divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800 lg:max-h-[calc(32rem-3rem)]">
               {threads.map((thread) => <ThreadButton key={thread.id} thread={thread} selected={thread.id === selectedThread?.id} onClick={() => { setSelectedThreadId(thread.id); setConnectionState('connecting'); setSendError('') }} />)}
             </ul>
@@ -164,7 +171,7 @@ export function StudentMessagesPage() {
             {selectedThread ? (
               <>
                 <header className="flex h-12 items-center justify-between gap-3 border-b border-slate-200 px-4 dark:border-slate-800">
-                  <div className="min-w-0"><h2 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{selectedThread.externalMentorName}</h2><p className="truncate text-xs text-slate-500 dark:text-slate-400">Submission {selectedThread.submissionId.slice(0, 8)}</p></div>
+                  <div className="min-w-0"><h2 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{selectedThread.participantName}</h2><p className="truncate text-xs text-slate-500 dark:text-slate-400">Submission {selectedThread.submissionId.slice(0, 8)}</p></div>
                   <ConnectionBadge state={visibleConnectionState} />
                 </header>
                 <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
@@ -195,10 +202,11 @@ export function StudentMessagesPage() {
   )
 }
 
-function PageHeading({ unreadCount }: { unreadCount: number }) {
+function PageHeading({ unreadCount, isExternalMentor }: { unreadCount: number; isExternalMentor: boolean }) {
+  const title = isExternalMentor ? 'Private student messages' : 'Messages'
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><p className="text-sm font-medium text-[#0f9d8a]">Student workspace</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Messages</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Private conversations with your external mentors.</p></div>
+      <div><p className="text-sm font-medium text-[#0f9d8a]">{isExternalMentor ? 'External mentor workspace' : 'Student workspace'}</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{title}</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{isExternalMentor ? 'Private conversations with students who shared work with you.' : 'Private conversations with your external mentors.'}</p></div>
       {unreadCount > 0 && <span className="rounded-sm bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">{unreadCount} unread</span>}
     </div>
   )
@@ -208,7 +216,7 @@ function ThreadButton({ thread, selected, onClick }: { thread: MessageThreadSumm
   return (
     <li>
       <button type="button" onClick={onClick} aria-current={selected ? 'true' : undefined} className={`w-full px-4 py-3 text-left transition-colors ${selected ? 'bg-teal-50/80 dark:bg-teal-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}>
-        <span className="flex items-start justify-between gap-2"><span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{thread.externalMentorName}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">Submission {thread.submissionId.slice(0, 8)}</span></span>{thread.unreadCount > 0 && <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#0f9d8a] text-[10px] font-semibold text-white">{thread.unreadCount}</span>}</span>
+        <span className="flex items-start justify-between gap-2"><span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{thread.participantName}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">Submission {thread.submissionId.slice(0, 8)}</span></span>{thread.unreadCount > 0 && <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#0f9d8a] text-[10px] font-semibold text-white">{thread.unreadCount}</span>}</span>
       </button>
     </li>
   )

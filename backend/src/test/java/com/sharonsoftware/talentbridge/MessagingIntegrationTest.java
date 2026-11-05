@@ -122,6 +122,10 @@ class MessagingIntegrationTest extends DatabaseIntegrationTest {
                         .header("Authorization", "Bearer " + data.studentToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].externalMentorName").value("Message EXTERNAL_MENTOR"));
+        mockMvc.perform(get("/api/messages/threads")
+                        .header("Authorization", "Bearer " + data.externalMentorToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].participantName").value("Message STUDENT"));
 
         mockMvc.perform(post("/api/messages/threads/{id}/messages", threadId)
                         .header("Authorization", "Bearer " + data.studentToken())
