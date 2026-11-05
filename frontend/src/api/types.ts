@@ -5,6 +5,7 @@ export type ISODateTime = string
 export type UserRole =
   | 'STUDENT'
   | 'COACH'
+  | 'EXTERNAL_TUTOR'
   | 'ADMIN'
   | 'MENTOR'
   | 'EMPLOYER'

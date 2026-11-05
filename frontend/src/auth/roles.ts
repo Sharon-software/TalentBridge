@@ -1,5 +1,4 @@
 import {
-  Activity,
   Award,
   BookOpenCheck,
   BriefcaseBusiness,
