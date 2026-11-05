@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
 import com.sharonsoftware.talentbridge.repository.ExternalAccessGrantRepository;
@@ -23,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import java.time.LocalDate;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -99,11 +101,16 @@ class AuthIntegrationTest extends DatabaseIntegrationTest {
                 .andReturn();
 
         JsonNode tokenResponse = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        StudentProfile profile = new StudentProfile();
+        profile.setUser(userRepository.findByEmail("student@example.com").orElseThrow());
+        profile.setStartDate(LocalDate.of(2026, 1, 15));
+        studentProfileRepository.save(profile);
         mockMvc.perform(get("/api/me")
                         .header("Authorization", "Bearer " + tokenResponse.get("accessToken").asText()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("student@example.com"))
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.startDate").value("2026-01-15"));
     }
 
     @Test

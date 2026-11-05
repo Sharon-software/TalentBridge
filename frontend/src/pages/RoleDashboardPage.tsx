@@ -3,6 +3,7 @@ import { isAppRole, roleForSlug, roleLabels, roleNavigation, roleSlugs } from '.
 import { useAuth } from '../auth/AuthContext'
 import { EmptyState, StatCard } from '../components/ui'
 import { ArrowUpRight, CircleCheck, Clock3, Layers3 } from 'lucide-react'
+import { StudentDashboardPage } from './StudentDashboardPage'
 
 export function RoleDashboardPage() {
   const { user } = useAuth()
@@ -16,6 +17,7 @@ export function RoleDashboardPage() {
 
   const item = roleNavigation[routeRole].find((entry) => entry.section === section)
   if (!item) return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
+  if (routeRole === 'STUDENT' && section === 'dashboard') return <StudentDashboardPage />
 
   return (
     <div className="space-y-6">

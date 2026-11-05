@@ -40,6 +40,7 @@ export interface MeResponse {
   firstName: string
   lastName: string
   role: UserRole
+  startDate?: ISODate | null
 }
 
 export interface ErrorResponse {
