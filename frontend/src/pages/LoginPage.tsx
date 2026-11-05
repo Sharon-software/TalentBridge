@@ -3,23 +3,27 @@ import { ArrowRight, BriefcaseBusiness, LockKeyhole, Mail } from 'lucide-react'
 import { isAxiosError } from 'axios'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { roleLabels, roleSlugs, type AppRole } from '../auth/roles'
+import { roleHomePath, roleLabels, type AppRole } from '../auth/roles'
 
-type LoginRole = Extract<AppRole, 'COACH' | 'STUDENT' | 'EXTERNAL_MENTOR' | 'RECRUITER'>
+type LoginRole = Extract<AppRole, 'COACH' | 'MENTOR' | 'STUDENT' | 'EXTERNAL_MENTOR' | 'RECRUITER' | 'ADMIN'>
 
-const loginRoles: LoginRole[] = ['COACH', 'STUDENT', 'EXTERNAL_MENTOR', 'RECRUITER']
+const loginRoles: LoginRole[] = ['STUDENT', 'COACH', 'MENTOR', 'EXTERNAL_MENTOR', 'RECRUITER', 'ADMIN']
 const demoPassword = 'TalentBridgeDemo!2026'
 const demoEmails: Record<LoginRole, string> = {
   COACH: 'coach@talentbridge.example',
+  MENTOR: 'mentor@talentbridge.example',
   STUDENT: 'student@talentbridge.example',
   EXTERNAL_MENTOR: 'external-mentor@talentbridge.example',
   RECRUITER: 'recruiter@talentbridge.example',
+  ADMIN: 'admin@talentbridge.example',
 }
 const roleDescriptions: Record<LoginRole, string> = {
   COACH: 'Manage cohorts and assignments, and support student progress.',
+  MENTOR: 'Review student progress, write recommendations, and manage hire requests.',
   STUDENT: 'Complete assignments, submit work, and manage your CV and recommendations.',
   EXTERNAL_MENTOR: 'Review work shared with you and communicate with students.',
   RECRUITER: 'Search student talent, manage shortlists, and handle hire requests.',
+  ADMIN: 'Manage users, cohorts, and platform activity.',
 }
 
 export function LoginPage() {
@@ -36,7 +40,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
 
   if (!loading && user) {
-    return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
+    return <Navigate to={roleHomePath(user.role)} replace />
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -53,7 +57,7 @@ export function LoginPage() {
         return
       }
       const from = (location.state as { from?: string } | null)?.from
-      navigate(from || `/${roleSlugs[currentUser.role]}/dashboard`, { replace: true })
+      navigate(from || roleHomePath(currentUser.role), { replace: true })
     } catch (requestError) {
       const responseMessage = isAxiosError<{ error?: string }>(requestError)
         ? requestError.response?.data?.error
@@ -108,8 +112,12 @@ export function LoginPage() {
                 <div>
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Sign in as</span>
-                    <select value={role} onChange={(event) => selectRole(event.target.value as LoginRole)} className="h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f9d8a] focus:ring-2 focus:ring-[#0f9d8a]/15 dark:border-slate-700 dark:bg-slate-950">
-                      {loginRoles.map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                      <select value={role} onChange={(event) => selectRole(event.target.value as LoginRole)} className="h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f9d8a] focus:ring-2 focus:ring-[#0f9d8a]/15 dark:border-slate-700 dark:bg-slate-950">
+                        <option value="STUDENT">{roleLabels.STUDENT}</option>
+                        <optgroup label="Coach / Mentor">
+                          {loginRoles.filter((value) => value === 'COACH' || value === 'MENTOR').map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                        </optgroup>
+                        {loginRoles.filter((value) => value !== 'STUDENT' && value !== 'COACH' && value !== 'MENTOR').map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
                     </select>
                   </label>
                   <p aria-live="polite" className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{roleDescriptions[role]}</p>

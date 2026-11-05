@@ -1,31 +1,42 @@
 package com.sharonsoftware.talentbridge.service;
 
 import com.sharonsoftware.talentbridge.domain.Role;
+import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
+import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import com.sharonsoftware.talentbridge.security.JwtService;
 import com.sharonsoftware.talentbridge.security.JwtService.TokenPair;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final StudentProfileRepository studentProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            StudentProfileRepository studentProfileRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
         this.userRepository = userRepository;
+        this.studentProfileRepository = studentProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
+    @Transactional
     public TokenPair register(String email, String password, String firstName, String lastName) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         if (userRepository.findByEmail(normalizedEmail).isPresent()) {
@@ -37,7 +48,12 @@ public class AuthService {
         user.setFirstName(firstName.trim());
         user.setLastName(lastName.trim());
         user.setRole(Role.STUDENT);
-        return jwtService.issueTokenPair(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        StudentProfile profile = new StudentProfile();
+        profile.setUser(savedUser);
+        profile.setStartDate(LocalDate.now());
+        studentProfileRepository.save(profile);
+        return jwtService.issueTokenPair(savedUser);
     }
 
     public TokenPair login(String email, String password) {

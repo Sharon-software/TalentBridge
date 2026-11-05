@@ -2,12 +2,14 @@ package com.sharonsoftware.talentbridge.controller;
 
 import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
+import com.sharonsoftware.talentbridge.domain.StudentProfile;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.domain.AnalysisStatus;
 import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
 import com.sharonsoftware.talentbridge.repository.ExternalTutorAssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.ScoreCardRepository;
+import com.sharonsoftware.talentbridge.repository.StudentProfileRepository;
 import com.sharonsoftware.talentbridge.repository.SubmissionRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import java.time.LocalDate;
@@ -47,6 +49,7 @@ public class AdminController {
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
     private final ScoreCardRepository scoreCardRepository;
+    private final StudentProfileRepository studentProfileRepository;
 
     public AdminController(
             UserRepository userRepository,
@@ -55,7 +58,8 @@ public class AdminController {
             ExternalTutorAssignmentRepository externalTutorAssignmentRepository,
             AssignmentRepository assignmentRepository,
             SubmissionRepository submissionRepository,
-            ScoreCardRepository scoreCardRepository) {
+            ScoreCardRepository scoreCardRepository,
+            StudentProfileRepository studentProfileRepository) {
         this.userRepository = userRepository;
         this.cohortRepository = cohortRepository;
         this.passwordEncoder = passwordEncoder;
@@ -63,6 +67,7 @@ public class AdminController {
         this.assignmentRepository = assignmentRepository;
         this.submissionRepository = submissionRepository;
         this.scoreCardRepository = scoreCardRepository;
+        this.studentProfileRepository = studentProfileRepository;
     }
 
     @GetMapping("/stats")
@@ -90,6 +95,7 @@ public class AdminController {
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
     public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         if (userRepository.findByEmail(email).isPresent()) {
@@ -101,7 +107,14 @@ public class AdminController {
         user.setFirstName(request.firstName().trim());
         user.setLastName(request.lastName().trim());
         user.setRole(request.role());
-        return toResponse(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        if (savedUser.getRole() == Role.STUDENT) {
+            StudentProfile profile = new StudentProfile();
+            profile.setUser(savedUser);
+            profile.setStartDate(LocalDate.now());
+            studentProfileRepository.save(profile);
+        }
+        return toResponse(savedUser);
     }
 
     @PatchMapping("/users/{id}/role")

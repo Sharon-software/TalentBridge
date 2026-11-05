@@ -9,6 +9,7 @@ import {
   Mail,
   MessageSquareText,
   Search,
+  Share2,
   Settings2,
   Users,
   type LucideIcon,
@@ -35,8 +36,23 @@ export const roleLabels: Record<AppRole, string> = {
   EXTERNAL_TUTOR: 'External Tutor',
   EXTERNAL_MENTOR: 'External Mentor',
   RECRUITER: 'Recruiter',
-  ADMIN: 'Administrator',
+  ADMIN: 'Admin',
   EMPLOYER: 'Employer',
+}
+
+export const roleHomeSections: Record<AppRole, string> = {
+  STUDENT: 'dashboard',
+  COACH: 'talent',
+  MENTOR: 'talent',
+  EXTERNAL_TUTOR: 'dashboard',
+  EXTERNAL_MENTOR: 'dashboard',
+  RECRUITER: 'talent',
+  ADMIN: 'dashboard',
+  EMPLOYER: 'dashboard',
+}
+
+export function roleHomePath(role: AppRole): string {
+  return `/${roleSlugs[role]}/${roleHomeSections[role]}`
 }
 
 export interface NavigationItem {
@@ -45,53 +61,50 @@ export interface NavigationItem {
   icon: LucideIcon
 }
 
-const overview: NavigationItem = { label: 'Overview', section: 'dashboard', icon: LayoutDashboard }
+const dashboard: NavigationItem = { label: 'Dashboard', section: 'dashboard', icon: LayoutDashboard }
 
 export const roleNavigation: Record<AppRole, NavigationItem[]> = {
   STUDENT: [
-    overview,
-    { label: 'Assignments', section: 'assignments', icon: BookOpenCheck },
-    { label: 'Submissions', section: 'submissions', icon: FileUser },
+    dashboard,
+    { label: 'Submit work', section: 'assignments', icon: BookOpenCheck },
     { label: 'My CV', section: 'cv', icon: FileUser },
     { label: 'Recommendations', section: 'recommendations', icon: Award },
     { label: 'Messages', section: 'messages', icon: MessageSquareText },
   ],
   COACH: [
-    overview,
-    { label: 'Cohorts', section: 'cohorts', icon: Users },
+    { label: 'Students', section: 'talent', icon: Users },
+    { label: 'External access', section: 'external-access', icon: Share2 },
     { label: 'Assignments', section: 'assignments', icon: BookOpenCheck },
-    { label: 'Talent', section: 'talent', icon: Search },
+    { label: 'Recommendation', section: 'recommendations', icon: Award },
   ],
   MENTOR: [
-    overview,
-    { label: 'Talent', section: 'talent', icon: Search },
-    { label: 'Recommendations', section: 'recommendations', icon: Award },
-    { label: 'Messages', section: 'messages', icon: MessageSquareText },
+    { label: 'Students', section: 'talent', icon: Users },
+    { label: 'External access', section: 'external-access', icon: Share2 },
+    { label: 'Recommendation', section: 'recommendations', icon: Award },
+    { label: 'Student chat', section: 'messages', icon: MessageSquareText },
     { label: 'Hire requests', section: 'hire-requests', icon: BriefcaseBusiness },
   ],
   EXTERNAL_TUTOR: [
-    overview,
+    dashboard,
     { label: 'Shared work', section: 'submissions', icon: BookOpenCheck },
   ],
   EXTERNAL_MENTOR: [
-    overview,
+    dashboard,
     { label: 'Shared work', section: 'submissions', icon: BookOpenCheck },
-    { label: 'Messages', section: 'messages', icon: MessageSquareText },
+    { label: 'Student chat', section: 'messages', icon: MessageSquareText },
   ],
   RECRUITER: [
-    overview,
     { label: 'Talent board', section: 'talent', icon: Search },
     { label: 'Shortlist', section: 'shortlist', icon: Bookmark },
-    { label: 'Hire requests', section: 'hire-requests', icon: BriefcaseBusiness },
   ],
   ADMIN: [
-    overview,
+    { label: 'Platform', section: 'dashboard', icon: LayoutDashboard },
     { label: 'Users', section: 'users', icon: Users },
     { label: 'Cohorts', section: 'cohorts', icon: GraduationCap },
     { label: 'Settings', section: 'settings', icon: Settings2 },
   ],
   EMPLOYER: [
-    overview,
+    dashboard,
     { label: 'Talent', section: 'talent', icon: Search },
     { label: 'Hire requests', section: 'hire-requests', icon: Mail },
   ],

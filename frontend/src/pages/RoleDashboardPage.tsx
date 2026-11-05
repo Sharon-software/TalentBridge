@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { isAppRole, roleForSlug, roleLabels, roleNavigation, roleSlugs } from '../auth/roles'
+import { isAppRole, roleForSlug, roleHomePath, roleLabels, roleNavigation } from '../auth/roles'
 import { useAuth } from '../auth/AuthContext'
 import { EmptyState, StatCard } from '../components/ui'
 import { ArrowUpRight, CircleCheck, Clock3, Layers3 } from 'lucide-react'
@@ -36,11 +36,11 @@ export function RoleDashboardPage() {
   if (!user || !roleSlug) return <Navigate to="/" replace />
   const routeRole = roleForSlug(roleSlug)
   if (!routeRole || !isAppRole(user.role) || routeRole !== user.role) {
-    return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
+    return <Navigate to={roleHomePath(user.role)} replace />
   }
 
   const item = roleNavigation[routeRole].find((entry) => entry.section === section)
-  if (!item) return <Navigate to={`/${roleSlugs[user.role]}/dashboard`} replace />
+  if (!item) return <Navigate to={roleHomePath(user.role)} replace />
   if (routeRole === 'COACH' || routeRole === 'MENTOR') {
     return <CoachMentorWorkspacePage section={section} />
   }

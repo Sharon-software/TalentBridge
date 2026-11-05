@@ -101,8 +101,8 @@ class AuthIntegrationTest extends DatabaseIntegrationTest {
                 .andReturn();
 
         JsonNode tokenResponse = objectMapper.readTree(loginResult.getResponse().getContentAsString());
-        StudentProfile profile = new StudentProfile();
-        profile.setUser(userRepository.findByEmail("student@example.com").orElseThrow());
+        StudentProfile profile = studentProfileRepository.findByUserId(
+                userRepository.findByEmail("student@example.com").orElseThrow().getId()).orElseThrow();
         profile.setStartDate(LocalDate.of(2026, 1, 15));
         studentProfileRepository.save(profile);
         mockMvc.perform(get("/api/me")
@@ -111,6 +111,12 @@ class AuthIntegrationTest extends DatabaseIntegrationTest {
                 .andExpect(jsonPath("$.email").value("student@example.com"))
                 .andExpect(jsonPath("$.role").value("STUDENT"))
                 .andExpect(jsonPath("$.startDate").value("2026-01-15"));
+        mockMvc.perform(get("/api/submissions/mine")
+                        .header("Authorization", "Bearer " + tokenResponse.get("accessToken").asText()))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/submissions/me/punctuality")
+                        .header("Authorization", "Bearer " + tokenResponse.get("accessToken").asText()))
+                .andExpect(status().isOk());
     }
 
     @Test

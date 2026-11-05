@@ -17,7 +17,7 @@ const roleLabels: Record<UserRole, string> = {
   EXTERNAL_TUTOR: 'External Tutor',
   EXTERNAL_MENTOR: 'External Mentor',
   RECRUITER: 'Recruiter',
-  ADMIN: 'Administrator',
+  ADMIN: 'Admin',
   EMPLOYER: 'Employer',
 }
 
@@ -54,7 +54,7 @@ export function AdminDashboardPage({ section = 'dashboard' }: { section?: string
     onError: () => notify('The role could not be updated.', 'error'),
   })
 
-  const pageTitle = activeSection === 'cohorts' ? 'Cohorts' : activeSection === 'settings' ? 'Platform overview' : 'Users'
+  const pageTitle = section === 'dashboard' ? 'Platform overview' : activeSection === 'cohorts' ? 'Cohorts' : activeSection === 'settings' ? 'Platform overview' : 'Users'
 
   return (
     <div className="space-y-7">

@@ -136,14 +136,21 @@ function PageHeading({ role, section }: { role: 'COACH' | 'MENTOR'; section: str
     ? 'Assignments'
     : section === 'recommendations'
       ? 'Recommendations'
+      : section === 'external-access'
+        ? 'External access'
+        : section === 'talent'
+          ? 'Your cohort'
       : section === 'hire-requests'
         ? 'Hire requests'
         : role === 'COACH' ? 'Coach workspace' : 'Mentor workspace'
+  const description = section === 'external-access'
+    ? 'Select a student to manage access to their shared submissions.'
+    : 'Cohort progress, student outcomes, and follow-up actions.'
   return (
     <div>
       <p className="text-sm font-medium text-[#0f9d8a]">{role === 'COACH' ? 'Coach' : 'Mentor'} workspace</p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{title}</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Cohort progress, student outcomes, and follow-up actions.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
     </div>
   )
 }
