@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 public interface ScoreCardRepository extends JpaRepository<ScoreCard, UUID> {
     Optional<ScoreCard> findBySubmissionId(UUID submissionId);
 
+	long countByAnalysisStatus(AnalysisStatus analysisStatus);
+
 	@EntityGraph(attributePaths = "submission")
 	List<ScoreCard> findAllBySubmissionStudentProfileIdOrderByIdAsc(UUID studentProfileId);
 

@@ -53,6 +53,22 @@ export interface AdminCreateUserRequest extends RegisterRequest {
 
 export type AdminUserResponse = MeResponse
 
+export interface AdminPlatformStats {
+  totalUsers: number
+  students: number
+  coaches: number
+  mentors: number
+  recruiters: number
+  externalTutors: number
+  externalMentors: number
+  admins: number
+  employers: number
+  cohorts: number
+  assignments: number
+  submissions: number
+  completedAnalyses: number
+}
+
 export interface AssignRoleRequest {
   role: UserRole
 }

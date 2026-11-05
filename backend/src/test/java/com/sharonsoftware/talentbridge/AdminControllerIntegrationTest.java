@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
 import com.sharonsoftware.talentbridge.domain.User;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
@@ -125,10 +126,43 @@ class AdminControllerIntegrationTest extends DatabaseIntegrationTest {
                 .andExpect(status().isNoContent());
     }
 
+        @Test
+        void adminCanReadPlatformStatsByRoleAndDomainTotals() throws Exception {
+                String adminToken = createToken("stats-admin@example.com", Role.ADMIN);
+                createToken("stats-student@example.com", Role.STUDENT);
+                createToken("stats-coach@example.com", Role.COACH);
+                createToken("stats-mentor@example.com", Role.MENTOR);
+                createToken("stats-recruiter@example.com", Role.RECRUITER);
+                createToken("stats-tutor@example.com", Role.EXTERNAL_TUTOR);
+                createToken("stats-external-mentor@example.com", Role.EXTERNAL_MENTOR);
+                Cohort cohort = new com.sharonsoftware.talentbridge.domain.Cohort();
+                cohort.setName("Stats cohort");
+                cohortRepository.save(cohort);
+
+                mockMvc.perform(get("/api/admin/stats")
+                                                .header("Authorization", "Bearer " + adminToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.totalUsers").value(7))
+                                .andExpect(jsonPath("$.students").value(1))
+                                .andExpect(jsonPath("$.coaches").value(1))
+                                .andExpect(jsonPath("$.mentors").value(1))
+                                .andExpect(jsonPath("$.recruiters").value(1))
+                                .andExpect(jsonPath("$.externalTutors").value(1))
+                                .andExpect(jsonPath("$.externalMentors").value(1))
+                                .andExpect(jsonPath("$.admins").value(1))
+                                .andExpect(jsonPath("$.employers").value(0))
+                                .andExpect(jsonPath("$.cohorts").value(1))
+                                .andExpect(jsonPath("$.assignments").value(0))
+                                .andExpect(jsonPath("$.submissions").value(0))
+                                .andExpect(jsonPath("$.completedAnalyses").value(0));
+        }
+
     @Test
     void adminRoutesRejectUnauthenticatedAndNonAdminUsers() throws Exception {
         mockMvc.perform(get("/api/admin/cohorts"))
                 .andExpect(status().isUnauthorized());
+                mockMvc.perform(get("/api/admin/stats"))
+                                .andExpect(status().isUnauthorized());
 
         String studentToken = createToken("student@example.com", Role.STUDENT);
         mockMvc.perform(get("/api/admin/cohorts").header("Authorization", "Bearer " + studentToken))

@@ -3,8 +3,12 @@ package com.sharonsoftware.talentbridge.controller;
 import com.sharonsoftware.talentbridge.domain.Cohort;
 import com.sharonsoftware.talentbridge.domain.Role;
 import com.sharonsoftware.talentbridge.domain.User;
+import com.sharonsoftware.talentbridge.domain.AnalysisStatus;
+import com.sharonsoftware.talentbridge.repository.AssignmentRepository;
 import com.sharonsoftware.talentbridge.repository.CohortRepository;
 import com.sharonsoftware.talentbridge.repository.ExternalTutorAssignmentRepository;
+import com.sharonsoftware.talentbridge.repository.ScoreCardRepository;
+import com.sharonsoftware.talentbridge.repository.SubmissionRepository;
 import com.sharonsoftware.talentbridge.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -40,16 +44,43 @@ public class AdminController {
     private final CohortRepository cohortRepository;
     private final PasswordEncoder passwordEncoder;
     private final ExternalTutorAssignmentRepository externalTutorAssignmentRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final SubmissionRepository submissionRepository;
+    private final ScoreCardRepository scoreCardRepository;
 
     public AdminController(
             UserRepository userRepository,
             CohortRepository cohortRepository,
             PasswordEncoder passwordEncoder,
-            ExternalTutorAssignmentRepository externalTutorAssignmentRepository) {
+            ExternalTutorAssignmentRepository externalTutorAssignmentRepository,
+            AssignmentRepository assignmentRepository,
+            SubmissionRepository submissionRepository,
+            ScoreCardRepository scoreCardRepository) {
         this.userRepository = userRepository;
         this.cohortRepository = cohortRepository;
         this.passwordEncoder = passwordEncoder;
         this.externalTutorAssignmentRepository = externalTutorAssignmentRepository;
+        this.assignmentRepository = assignmentRepository;
+        this.submissionRepository = submissionRepository;
+        this.scoreCardRepository = scoreCardRepository;
+    }
+
+    @GetMapping("/stats")
+    public PlatformStats platformStats() {
+        return new PlatformStats(
+                userRepository.count(),
+                userRepository.countByRole(Role.STUDENT),
+                userRepository.countByRole(Role.COACH),
+                userRepository.countByRole(Role.MENTOR),
+                userRepository.countByRole(Role.RECRUITER),
+                userRepository.countByRole(Role.EXTERNAL_TUTOR),
+                userRepository.countByRole(Role.EXTERNAL_MENTOR),
+                userRepository.countByRole(Role.ADMIN),
+                userRepository.countByRole(Role.EMPLOYER),
+                cohortRepository.count(),
+                assignmentRepository.count(),
+                submissionRepository.count(),
+                scoreCardRepository.countByAnalysisStatus(AnalysisStatus.COMPLETED));
     }
 
     @GetMapping("/users")
@@ -222,4 +253,20 @@ public class AdminController {
             String lastName,
             String email) {
     }
+
+            public record PlatformStats(
+                long totalUsers,
+                long students,
+                long coaches,
+                long mentors,
+                long recruiters,
+                long externalTutors,
+                long externalMentors,
+                long admins,
+                long employers,
+                long cohorts,
+                long assignments,
+                long submissions,
+                long completedAnalyses) {
+            }
 }

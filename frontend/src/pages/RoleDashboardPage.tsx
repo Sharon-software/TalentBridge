@@ -24,6 +24,10 @@ const RecruiterDashboardPage = lazy(async () => {
   const module = await import('./RecruiterDashboardPage')
   return { default: module.RecruiterDashboardPage }
 })
+const AdminDashboardPage = lazy(async () => {
+  const module = await import('./AdminDashboardPage')
+  return { default: module.AdminDashboardPage }
+})
 
 export function RoleDashboardPage() {
   const { user } = useAuth()
@@ -49,6 +53,9 @@ export function RoleDashboardPage() {
   }
   if (routeRole === 'RECRUITER' && (section === 'talent' || section === 'shortlist')) {
     return <Suspense fallback={<Skeleton rows={5} />}><RecruiterDashboardPage section={section} /></Suspense>
+  }
+  if (routeRole === 'ADMIN' && ['dashboard', 'users', 'cohorts', 'settings'].includes(section)) {
+    return <Suspense fallback={<Skeleton rows={5} />}><AdminDashboardPage section={section} /></Suspense>
   }
   if (routeRole === 'STUDENT') {
     if (section === 'dashboard') return <StudentDashboardPage />

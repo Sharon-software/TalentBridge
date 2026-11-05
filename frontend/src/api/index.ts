@@ -1,6 +1,7 @@
 import { apiClient, clearTokens, getRefreshToken, saveTokenResponse } from './client'
 import type {
   AdminCreateUserRequest,
+  AdminPlatformStats,
   AdminUserResponse,
   AssignRoleRequest,
   AssignmentResponse,
@@ -70,6 +71,7 @@ const authApi = {
 }
 
 const adminApi = {
+  stats: async () => (await apiClient.get<AdminPlatformStats>('/api/admin/stats')).data,
   users: async () => (await apiClient.get<AdminUserResponse[]>('/api/admin/users')).data,
   createUser: async (request: AdminCreateUserRequest) =>
     (await apiClient.post<AdminUserResponse>('/api/admin/users', request)).data,
