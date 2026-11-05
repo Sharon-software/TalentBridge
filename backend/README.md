@@ -35,6 +35,24 @@ The public health endpoint is `http://localhost:8080/actuator/health`. Other rou
 
 Send access tokens as `Authorization: Bearer <token>`. Access tokens last 15 minutes by default and refresh tokens 7 days. Set `JWT_SECRET` to a Base64-encoded secret of at least 32 bytes outside local development. Token TTLs can be changed with `JWT_ACCESS_TOKEN_TTL` and `JWT_REFRESH_TOKEN_TTL`. Configure browser origins with the comma-separated `CORS_ALLOWED_ORIGINS` variable.
 
+### Local demo accounts
+
+To start the demo backend without installing PostgreSQL or Docker, activate the `demo` Spring profile. It uses an in-memory H2 database and seeds one account for each supported sign-in role:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE = "demo"
+mvn spring-boot:run
+```
+
+Each demo account uses the password `TalentBridgeDemo!2026` by default. Override it with `DEMO_ACCOUNT_PASSWORD` before starting the backend. Accounts are recreated on each startup and their data is temporary. The accounts are seeded only with the explicit `demo` profile; do not enable that profile on a publicly accessible or production deployment.
+
+| Role | Email |
+| --- | --- |
+| Student | `student@talentbridge.example` |
+| Coach | `coach@talentbridge.example` |
+| Recruiter | `recruiter@talentbridge.example` |
+| External mentor | `external-mentor@talentbridge.example` |
+
 ## Assignments and submissions
 
 - `POST /api/assignments` creates an assignment for a cohort and requires the `COACH` role. Supply `cohortId`, `title`, and an ISO-8601 `dueAt` timestamp.

@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, clearTokens, getAccessToken, getRefreshToken } from '../api'
-import type { LoginRequest, MeResponse, TokenPair } from '../api/types'
+import type { LoginRequest, MeResponse, RegisterRequest, TokenPair } from '../api/types'
 
 interface AuthContextValue {
   token: string | null
   user: MeResponse | null
   loading: boolean
   login: (credentials: LoginRequest) => Promise<MeResponse>
+  register: (details: RegisterRequest) => Promise<MeResponse>
   logout: () => void
 }
 
@@ -87,6 +88,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function register(details: RegisterRequest): Promise<MeResponse> {
+    setLoading(true)
+    try {
+      const tokens = await api.auth.register(details)
+      const currentUser = await api.auth.me()
+      setToken(tokens.accessToken)
+      setUser(currentUser)
+      return currentUser
+    } catch (error) {
+      clearTokens()
+      setToken(null)
+      setUser(null)
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   function logout() {
     api.auth.logout()
     setToken(null)
@@ -94,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

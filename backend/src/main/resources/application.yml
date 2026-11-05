@@ -33,6 +33,8 @@ management:
       show-details: when-authorized
 
 app:
+  demo:
+    password: ${DEMO_ACCOUNT_PASSWORD:TalentBridgeDemo!2026}
   analysis:
     claude:
       api-key: ${ANTHROPIC_API_KEY:}
