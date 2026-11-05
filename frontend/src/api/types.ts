@@ -402,9 +402,14 @@ export interface RecommendationLetterSummary {
 }
 
 export interface TalentSearchParams {
-  qualification?: string
+  qualifications?: string[]
   minYearsExperience?: number
   skill?: string
+  search?: string
   page?: number
   size?: number
+}
+
+export interface TalentFilters {
+  ictQualifications: string[]
 }

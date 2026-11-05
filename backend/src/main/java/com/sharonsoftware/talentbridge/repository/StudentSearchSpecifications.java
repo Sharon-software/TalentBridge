@@ -20,8 +20,10 @@ public final class StudentSearchSpecifications {
     public static Specification<StudentProfile> talentSearch(
             LocalDate eligibleStartDate,
             String qualification,
+            List<String> qualifications,
             Integer minYearsExperience,
-            String skill) {
+            String skill,
+            String search) {
         return (profile, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.lessThanOrEqualTo(profile.get("startDate"), eligibleStartDate));
@@ -35,6 +37,22 @@ public final class StudentSearchSpecifications {
                         criteriaBuilder.like(criteriaBuilder.lower(item.get("name")),
                                 "%" + qualification.trim().toLowerCase(Locale.ROOT) + "%"));
                 predicates.add(criteriaBuilder.exists(matchingQualifications));
+            }
+
+            if (qualifications != null && !qualifications.isEmpty()) {
+                List<String> normalizedQualifications = qualifications.stream()
+                        .filter(value -> value != null && !value.isBlank())
+                        .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                        .toList();
+                if (!normalizedQualifications.isEmpty()) {
+                    var matchingQualifications = query.subquery(Integer.class);
+                    Root<Qualification> item = matchingQualifications.from(Qualification.class);
+                    matchingQualifications.select(criteriaBuilder.literal(1));
+                    matchingQualifications.where(
+                            criteriaBuilder.equal(item.get("studentProfile").get("id"), profile.get("id")),
+                            criteriaBuilder.lower(item.get("name")).in(normalizedQualifications));
+                    predicates.add(criteriaBuilder.exists(matchingQualifications));
+                }
             }
 
             if (minYearsExperience != null) {
@@ -59,6 +77,27 @@ public final class StudentSearchSpecifications {
                         criteriaBuilder.equal(criteriaBuilder.lower(skillValue), skill.trim().toLowerCase(Locale.ROOT)));
                 predicates.add(criteriaBuilder.exists(matchingSkills));
             }
+
+            if (search != null && !search.isBlank()) {
+                String searchPattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+                var user = profile.get("user");
+                var fullName = criteriaBuilder.lower(criteriaBuilder.concat(
+                    criteriaBuilder.concat(user.get("firstName"), " "), user.get("lastName")));
+                predicates.add(criteriaBuilder.or(
+                    criteriaBuilder.like(fullName, searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(user.get("firstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(user.get("lastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(user.get("email")), searchPattern)));
+            }
+
+                    if (!Long.class.equals(query.getResultType()) && !long.class.equals(query.getResultType())) {
+                    query.orderBy(
+                        criteriaBuilder.asc(criteriaBuilder.<Integer>selectCase()
+                            .when(criteriaBuilder.isNull(profile.get("overallScore")), 1)
+                            .otherwise(0)),
+                        criteriaBuilder.desc(profile.get("overallScore")),
+                        criteriaBuilder.asc(profile.get("id")));
+                    }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };

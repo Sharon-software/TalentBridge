@@ -1,5 +1,6 @@
 import {
   Award,
+  Bookmark,
   BookOpenCheck,
   BriefcaseBusiness,
   FileUser,
@@ -79,7 +80,8 @@ export const roleNavigation: Record<AppRole, NavigationItem[]> = {
   ],
   RECRUITER: [
     overview,
-    { label: 'Talent search', section: 'talent', icon: Search },
+    { label: 'Talent board', section: 'talent', icon: Search },
+    { label: 'Shortlist', section: 'shortlist', icon: Bookmark },
     { label: 'Hire requests', section: 'hire-requests', icon: BriefcaseBusiness },
   ],
   ADMIN: [

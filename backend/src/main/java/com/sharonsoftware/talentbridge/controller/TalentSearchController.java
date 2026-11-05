@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,16 +65,16 @@ public class TalentSearchController {
     @GetMapping
         public StudentPage search(
             @RequestParam(required = false) @Size(max = 200) String qualification,
+                        @RequestParam(required = false) List<@Size(max = 200) String> qualifications,
             @RequestParam(required = false) @Min(0) @Max(80) Integer minYearsExperience,
             @RequestParam(required = false) @Size(max = 100) String skill,
+                        @RequestParam(required = false) @Size(max = 200) String search,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(MAX_PAGE_SIZE) int size) {
-        var pageable = PageRequest.of(page, size, Sort.by(
-                Sort.Order.desc("overallScore"),
-                Sort.Order.asc("id")));
+        var pageable = PageRequest.of(page, size);
         Page<StudentProfile> profiles = studentProfileRepository.findAll(
                 StudentSearchSpecifications.talentSearch(
-                        LocalDate.now().minusMonths(6), qualification, minYearsExperience, skill),
+                        LocalDate.now().minusMonths(6), qualification, qualifications, minYearsExperience, skill, search),
                 pageable);
         return new StudentPage(
                 profiles.map(this::toSummary).getContent(),
@@ -86,6 +85,11 @@ public class TalentSearchController {
                 profiles.isFirst(),
                 profiles.isLast());
     }
+
+        @GetMapping("/filters")
+        public TalentFilters filters() {
+                return new TalentFilters(qualificationRepository.findEligibleNames(LocalDate.now().minusMonths(6)));
+        }
 
     @GetMapping("/{studentProfileId}")
     public StudentDetail detail(@PathVariable UUID studentProfileId) {
@@ -164,6 +168,9 @@ public class TalentSearchController {
             int totalPages,
             boolean first,
             boolean last) {
+    }
+
+    public record TalentFilters(List<String> ictQualifications) {
     }
 
     public record CvEntrySummary(

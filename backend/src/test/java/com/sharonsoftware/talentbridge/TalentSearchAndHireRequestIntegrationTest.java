@@ -146,6 +146,45 @@ class TalentSearchAndHireRequestIntegrationTest extends DatabaseIntegrationTest 
     }
 
     @Test
+    void recruiterCanMultiSelectQualificationsSearchNamesAndOnlySeeEligibleFilterOptions() throws Exception {
+        mockMvc.perform(get("/api/recruiters/students/filters")
+                        .header("Authorization", bearer(recruiter)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ictQualifications", org.hamcrest.Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.ictQualifications").value(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.hasItem("Computer Science"))));
+
+        StudentProfile unscoredProfile = studentProfileRepository.findByUserId(secondStudent.getId()).orElseThrow();
+        unscoredProfile.setOverallScore(null);
+        studentProfileRepository.save(unscoredProfile);
+
+        mockMvc.perform(get("/api/recruiters/students")
+                        .header("Authorization", bearer(recruiter))
+                        .param("qualifications", "Bachelor of Computer Science", "Computer Engineering")
+                        .param("search", "talent student")
+                        .param("page", "0")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[0].studentProfileId").value(studentProfile.getId().toString()))
+                .andExpect(jsonPath("$.content[0].overallScore").value(95.0));
+
+        mockMvc.perform(get("/api/recruiters/students")
+                        .header("Authorization", bearer(recruiter))
+                        .param("qualifications", "Bachelor of Computer Science", "Computer Engineering")
+                        .param("search", "talent student")
+                        .param("page", "1")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].studentProfileId").value(unscoredProfile.getId().toString()))
+                .andExpect(jsonPath("$.content[0].overallScore").isEmpty());
+
+        mockMvc.perform(get("/api/recruiters/students/{id}", studentProfileRepository.findByUserId(recentStudent.getId()).orElseThrow().getId())
+                        .header("Authorization", bearer(recruiter)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void recruiterAndMentorCanCreateHireRequestsButStudentsCannot() throws Exception {
         String request = objectMapper.writeValueAsString(
                 new HireRequestBody(studentProfile.getId(), "Northwind", "hiring@example.com", "Please contact me."));

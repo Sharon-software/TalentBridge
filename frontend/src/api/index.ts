@@ -36,6 +36,7 @@ import type {
   SubmissionReviewResponse,
   SubmissionResponse,
   TalentSearchParams,
+  TalentFilters,
   ThreadMessages,
   TokenPair,
   UnreadCount,
@@ -187,6 +188,7 @@ const hireRequestApi = {
 }
 
 const talentApi = {
+  filters: async () => (await apiClient.get<TalentFilters>('/api/recruiters/students/filters')).data,
   search: async (params: TalentSearchParams) =>
     (await apiClient.get<StudentPage>('/api/recruiters/students', { params })).data,
   detail: async (studentProfileId: UUID) =>

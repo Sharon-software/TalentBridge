@@ -20,6 +20,10 @@ const ExternalMentorDashboardPage = lazy(async () => {
   const module = await import('./ExternalMentorDashboardPage')
   return { default: module.ExternalMentorDashboardPage }
 })
+const RecruiterDashboardPage = lazy(async () => {
+  const module = await import('./RecruiterDashboardPage')
+  return { default: module.RecruiterDashboardPage }
+})
 
 export function RoleDashboardPage() {
   const { user } = useAuth()
@@ -42,6 +46,9 @@ export function RoleDashboardPage() {
   if (routeRole === 'EXTERNAL_MENTOR') {
     if (section === 'dashboard' || section === 'submissions') return <Suspense fallback={<Skeleton rows={5} />}><ExternalMentorDashboardPage /></Suspense>
     if (section === 'messages') return <StudentMessagesPage />
+  }
+  if (routeRole === 'RECRUITER' && (section === 'talent' || section === 'shortlist')) {
+    return <Suspense fallback={<Skeleton rows={5} />}><RecruiterDashboardPage section={section} /></Suspense>
   }
   if (routeRole === 'STUDENT') {
     if (section === 'dashboard') return <StudentDashboardPage />
