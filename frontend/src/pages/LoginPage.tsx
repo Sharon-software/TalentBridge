@@ -7,7 +7,8 @@ import { roleHomePath, roleLabels, type AppRole } from '../auth/roles'
 
 type LoginRole = Extract<AppRole, 'COACH' | 'MENTOR' | 'STUDENT' | 'EXTERNAL_TUTOR' | 'EXTERNAL_MENTOR' | 'RECRUITER' | 'EMPLOYER' | 'ADMIN'>
 
-const loginRoles: LoginRole[] = ['STUDENT', 'COACH', 'MENTOR', 'EXTERNAL_TUTOR', 'EXTERNAL_MENTOR', 'RECRUITER', 'EMPLOYER', 'ADMIN']
+const primaryLoginRoles: LoginRole[] = ['STUDENT', 'COACH', 'EXTERNAL_MENTOR', 'RECRUITER']
+const otherLoginRoles: LoginRole[] = ['MENTOR', 'EXTERNAL_TUTOR', 'EMPLOYER']
 const demoPassword = 'TalentBridgeDemo!2026'
 const demoEmails: Record<LoginRole, string> = {
   COACH: 'coach@talentbridge.example',
@@ -117,11 +118,13 @@ export function LoginPage() {
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Sign in as</span>
                       <select value={role} onChange={(event) => selectRole(event.target.value as LoginRole)} className="h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f9d8a] focus:ring-2 focus:ring-[#0f9d8a]/15 dark:border-slate-700 dark:bg-slate-950">
-                        <option value="STUDENT">{roleLabels.STUDENT}</option>
-                        <optgroup label="Coach / Mentor">
-                          {loginRoles.filter((value) => value === 'COACH' || value === 'MENTOR').map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                        {primaryLoginRoles.map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                        <optgroup label="Platform administration">
+                          <option value="ADMIN">{roleLabels.ADMIN}</option>
                         </optgroup>
-                        {loginRoles.filter((value) => value !== 'STUDENT' && value !== 'COACH' && value !== 'MENTOR').map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                        <optgroup label="Other workspaces">
+                          {otherLoginRoles.map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
+                        </optgroup>
                     </select>
                   </label>
                   <p aria-live="polite" className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{roleDescriptions[role]}</p>
