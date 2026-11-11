@@ -1,6 +1,6 @@
 # TalentBridge Frontend
 
-Vite + React + TypeScript foundation with Tailwind CSS, React Router, Axios, and TanStack Query. The application shell is intentionally empty; no pages have been added.
+Vite + React + TypeScript application with role-specific workspaces for students, coaches, mentors, external reviewers, recruiters, and administrators. It uses Tailwind CSS, React Router, Axios, and TanStack Query to communicate with the Spring Boot API.
 
 ## Requirements
 
@@ -23,3 +23,5 @@ Set `VITE_API_URL` in `.env.local` if the backend is not at `http://localhost:80
 npm run lint
 npm run build
 ```
+
+See the root [TalentBridge README](../README.md) for the full-stack demo setup and demo account details.
