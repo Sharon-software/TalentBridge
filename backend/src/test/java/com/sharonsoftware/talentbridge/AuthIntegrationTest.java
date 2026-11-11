@@ -4,7 +4,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -161,6 +163,16 @@ class AuthIntegrationTest extends DatabaseIntegrationTest {
     void protectedEndpointReturnsUnauthorizedWithoutToken() throws Exception {
         mockMvc.perform(get("/api/me"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void frontendEntryAndLoginRoutesArePublic() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(result -> assertNotEquals(401, result.getResponse().getStatus()));
+        mockMvc.perform(get("/login"))
+                .andExpect(forwardedUrl("/index.html"));
+        mockMvc.perform(get("/assets/app.js"))
+                .andExpect(result -> assertNotEquals(401, result.getResponse().getStatus()));
     }
 
     @Test
