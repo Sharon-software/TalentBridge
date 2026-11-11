@@ -1,4 +1,3 @@
-grants and hire requests, file size and type validation, OpenAPI docs, and
 # TalentBridge
 
 TalentBridge connects students, coaches, mentors, external reviewers, recruiters, and administrators around cohort learning and career readiness. It includes role-specific workspaces backed by a Spring Boot API and PostgreSQL.
